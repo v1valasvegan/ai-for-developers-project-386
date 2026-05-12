@@ -1,0 +1,11 @@
+.hero-surface {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(13, 148, 136, 0.14), transparent 48%),
+    radial-gradient(circle at 80% 0%, rgba(14, 116, 144, 0.16), transparent 42%),
+    linear-gradient(135deg, #f7fffd 0%, #f1f6ff 100%);
+}
+
+.active-card {
+  border-color: #0d9488;
+  box-shadow: 0 0 0 1px rgba(13, 148, 136, 0.24);
+}

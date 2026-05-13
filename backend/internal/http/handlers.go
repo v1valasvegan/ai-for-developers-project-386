@@ -3,7 +3,10 @@ package http
 import (
 	"encoding/json"
 	"errors"
+	"io/fs"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -14,7 +17,7 @@ type Handler struct {
 	service *service.Service
 }
 
-func NewRouter(svc *service.Service) http.Handler {
+func NewRouter(svc *service.Service, frontendDistPath string) http.Handler {
 	h := &Handler{service: svc}
 	r := chi.NewRouter()
 
@@ -37,7 +40,48 @@ func NewRouter(svc *service.Service) http.Handler {
 		api.Post("/bookings", h.createBooking)
 	})
 
+	if frontendDistPath != "" {
+		if stat, err := os.Stat(frontendDistPath); err == nil && stat.IsDir() {
+			if sub, err := fs.Sub(os.DirFS(frontendDistPath), "."); err == nil {
+				r.Get("/*", spaHandler(sub, "index.html"))
+			}
+		}
+	}
+
 	return r
+}
+
+func spaHandler(filesystem fs.FS, indexFile string) http.HandlerFunc {
+	fileServer := http.FileServer(http.FS(filesystem))
+
+	return func(writer http.ResponseWriter, request *http.Request) {
+		path := request.URL.Path
+		filePath := strings.TrimPrefix(path, "/")
+
+		if path == "/" {
+			serveIndexFile(writer, filesystem, indexFile)
+			return
+		}
+
+		if _, err := fs.Stat(filesystem, filePath); err == nil {
+			fileServer.ServeHTTP(writer, request)
+			return
+		}
+
+		serveIndexFile(writer, filesystem, indexFile)
+	}
+}
+
+func serveIndexFile(writer http.ResponseWriter, filesystem fs.FS, indexFile string) {
+	content, err := fs.ReadFile(filesystem, indexFile)
+	if err != nil {
+		http.Error(writer, "index file is unavailable", http.StatusInternalServerError)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+	writer.WriteHeader(http.StatusOK)
+	_, _ = writer.Write(content)
 }
 
 func (h *Handler) createEventType(writer http.ResponseWriter, request *http.Request) {

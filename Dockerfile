@@ -1,5 +1,5 @@
-FROM node:20-alpine AS build
-WORKDIR /app
+FROM node:20-alpine AS frontend-build
+WORKDIR /app/frontend
 
 COPY frontend/package*.json ./
 RUN npm ci
@@ -7,13 +7,22 @@ RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 
-FROM node:20-alpine
+FROM golang:1.24-alpine AS backend-build
+WORKDIR /app/backend
+
+COPY backend/go.mod backend/go.sum ./
+RUN go mod download
+
+COPY backend/ ./
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/server ./cmd/server
+
+FROM alpine:3.21
 WORKDIR /app
 
 ENV PORT=3000
-RUN npm install -g serve
 
-COPY --from=build /app/dist ./dist
+COPY --from=backend-build /app/server ./server
+COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
 EXPOSE 3000
-CMD ["sh", "-c", "serve -s dist -l ${PORT}"]
+CMD ["./server"]

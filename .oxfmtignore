@@ -1,0 +1,12 @@
+# Generated output is checked by regeneration, not reformatted by hand.
+api/generated/
+backend/generated/
+frontend/src/api/generated/
+# Hexlet-managed files must stay byte-for-byte unchanged.
+.github/workflows/hexlet-check.yml
+.github/workflows/README.md
+node_modules/
+frontend/dist/
+backend/target/
+package-lock.json
+mise.lock

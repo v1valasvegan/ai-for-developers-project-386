@@ -1,0 +1,83 @@
+min_version = "2026.10.25"
+
+[settings]
+experimental = true
+
+[env]
+OPENAPI_GENERATOR_VERSION = "7.26.0"
+GENERATOR_CHECKSUM_SHA256 = "1760050094997b9cc790cc1350be095f15da8c08a996b184d3eadc4ccda5e35e"
+
+[tools]
+node = "24.22.2"
+java = "temurin-21.0.13+9.0.LTS"
+rust = { version = "1.99.1", components = "clippy,rustfmt" }
+hk = "2.11.0"
+pkl = "0.32.2"
+pitchfork = "2.32.4"
+"github:jdx/jactionlint" = "2.4.0"
+"github:betterleaks/betterleaks" = "1.9.0"
+"github:google/osv-scanner" = "2.7.0"
+"github:EmbarkStudios/cargo-deny" = "0.20.2"
+"github:bnjbvr/cargo-machete" = "0.9.2"
+"github:agent-sh/agnix" = "0.60.2"
+"github:daveshanley/vacuum" = "0.36.1"
+"github:koalaman/shellcheck" = "0.11.0"
+
+[tasks.install]
+description = "Install dependencies and local Git hooks"
+run = ["npm ci", "cargo fetch --locked --manifest-path backend/Cargo.toml", "hk install"]
+
+[tasks.generate]
+description = "Generate OpenAPI, frontend SDK and Axum server types/routes"
+run = "npm run api:generate"
+
+[tasks.build]
+description = "Build frontend and backend"
+run = ["npm run build", "cargo build --locked --manifest-path backend/Cargo.toml"]
+
+[tasks.test]
+description = "Build and run tests, including a real HTTP smoke test"
+depends = ["build"]
+run = ["cargo test --locked --manifest-path backend/Cargo.toml", "npm test"]
+
+[tasks.lint]
+description = "Lint handwritten frontend code"
+run = "npm run lint"
+
+[tasks.check]
+description = "Run every quality gate (same command locally and in CI)"
+run = [
+  "node scripts/check-generated.mjs",
+  "hk check --all",
+  "npm run commitlint",
+  "mise run test",
+  "mise run security",
+]
+
+[tasks.security]
+description = "Scan secrets and dependency vulnerabilities (network required)"
+run = [
+  "node scripts/check-secrets.mjs",
+  "cargo deny --manifest-path backend/Cargo.toml --all-features check --deny warnings",
+  "osv-scanner scan source --lockfile package-lock.json",
+]
+
+[tasks.fix]
+description = "Apply formatting only; review the diff afterward"
+run = ["npm run format", "cargo fmt --manifest-path backend/Cargo.toml --package okoshko-backend"]
+
+[tasks.dev]
+description = "Start supervised frontend and backend"
+run = "mise daemons start backend frontend"
+
+[tasks.stop]
+description = "Stop project servers"
+run = "mise daemons stop frontend backend"
+
+[daemons.backend]
+run = "exec cargo run --locked --manifest-path backend/Cargo.toml"
+ready_port = 3000
+
+[daemons.frontend]
+run = "exec npm run dev --workspace frontend"
+ready_port = 5173

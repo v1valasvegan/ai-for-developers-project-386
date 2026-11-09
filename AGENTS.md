@@ -1,52 +1,22 @@
-# AGENTS.md
+# Окошко
 
-## Scope
-- Current stack is frontend + contract + in-memory Go backend:
-  - `frontend/` - React + Vite + TypeScript + Mantine + React Query
-  - `api.tsp` - TypeSpec contract compiled to OpenAPI
-  - `backend/` - Go API server (chi) with in-memory storage
+## Project overview
 
-## Use Make Targets First
-- `make install` - install root and frontend dependencies.
-- `make dev` - start Go backend + frontend together (default local entrypoint).
-- `make dev-mock` - start Prism + frontend in contract-mock mode.
-- `make backend-dev` - start Go backend server on `:3000`.
-- `make stop-backend` - stop stale backend process on `:3000`.
-- `make stop-mock` - stop stale Prism process on `127.0.0.1:4010`.
-- `make frontend-lint` - run frontend lint.
-- `make frontend-build` - run frontend typecheck/build.
-- `make api-build` - compile `api.tsp` into `api/@typespec/openapi3/openapi.yaml`.
-- `make api-mock` - run Prism mock on `127.0.0.1:4010`.
-- `make frontend-dev-mock` - run frontend against Prism (`VITE_API_URL=http://127.0.0.1:4010`).
-- `make check` - run local verification gate (`frontend-lint`, `frontend-build`, `api-build`).
+- `backend/` — Rust + Axum; `frontend/` — React + TypeScript + Vite + Mantine.
+- `api/main.tsp` — источник API-контракта; `tests/` — HTTP smoke-тест через сгенерированный SDK.
+- Функции бронирования пока не реализованы.
 
-## API Integration Rules
-- Frontend must use API only (no runtime local mocks in UI).
-- Backend URL comes from `VITE_API_URL`.
-- Default frontend backend URL is `http://localhost:3000/api/v1`.
-- Use `make dev-mock` when backend implementation is not the target of current task.
+## Build, test and setup commands
 
-## Contract Workflow
-- If `api.tsp` changes, always run `make api-build`.
-- Validate frontend behavior against Prism with:
-  - terminal 1: `make api-mock`
-  - terminal 2: `make frontend-dev-mock`
+- `mise run install` — зависимости и Git-хуки.
+- `mise run dev` / `mise run stop` — запуск / остановка серверов; `mise daemons status` — состояние.
+- `mise run build` — сборка; `mise run test` — тесты; `mise run lint` — линтер фронтенда.
+- `mise run check` — все проверки, включая Rust-линтер, форматирование и безопасность; обязаны пройти до завершения изменения. CI запускает ту же команду.
+- `mise run generate` — перегенерация API; `mise run fix` — форматирование с последующей проверкой diff.
 
-## Repo-Specific Gotchas
-- Do not edit or remove `.github/workflows/hexlet-check.yml`.
-- Prism mock responses can differ from final backend wrapper shape; `frontend/src/shared/api.ts` already handles both plain and wrapped responses.
+## Правила
 
-## Current App Structure
-- Guest page route: `/`
-- Admin page route: `/admin`
-- API client: `frontend/src/shared/api.ts`
-- API types: `frontend/src/types/api.ts`
-- Backend entrypoint: `backend/cmd/server/main.go`
-
-## Agent Defaults
-- Prefer minimal, targeted diffs.
-- After frontend edits, run at least:
-  - `make frontend-lint`
-  - `make frontend-build`
-- After contract edits, also run `make api-build`.
-- For backend changes, run `make backend-dev` and verify endpoint behavior from frontend or curl.
+- Коммиты — Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:` и другие стандартные типы; формат проверяется commitlint.
+- `api/generated/`, `frontend/src/api/generated/`, `backend/generated/` генерируются: вручную не редактировать. Проверка повторяет генерацию и обнаруживает расхождения.
+- Линт-правила не отключать ради прохождения проверок. Исключение — только узкое, с причиной и согласованием человека; исключения безопасности имеют дату пересмотра.
+- `.github/workflows/hexlet-check.yml` управляется Хекслетом: не редактировать и не удалять.

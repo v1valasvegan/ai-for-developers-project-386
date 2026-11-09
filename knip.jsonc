@@ -1,0 +1,21 @@
+{
+  "$schema": "./node_modules/knip/schema-jsonc.json",
+  "treatConfigHintsAsErrors": true,
+  "workspaces": {
+    ".": {
+      // These CLIs are invoked by mise and by other scripts, not imported.
+      "entry": ["scripts/*.mjs"],
+      // TypeSpec imports and its YAML emitter configuration are not JavaScript.
+      "ignoreDependencies": ["@typespec/http", "@typespec/openapi", "@typespec/openapi3"],
+      // Installed and pinned in mise.toml, not package.json.
+      "ignoreBinaries": ["betterleaks", "java"],
+    },
+    "frontend": {
+      // The SDK generator emits a complete client, including unused helpers.
+      // Keep dependency and unresolved-import analysis enabled for generated code.
+      "ignoreIssues": {
+        "src/api/generated/**": ["files", "exports", "types"],
+      },
+    },
+  },
+}

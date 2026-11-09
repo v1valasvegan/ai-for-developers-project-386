@@ -1,0 +1,62 @@
+version: 2
+updates:
+  # npm discovers the frontend workspace through the root package-lock.json.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      typespec:
+        patterns:
+          - "@typespec/*"
+      mantine:
+        patterns:
+          - "@mantine/*"
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
+    ignore:
+      # The SDK generator still requires the TypeScript 6 compiler API.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+
+  - package-ecosystem: cargo
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    # The server crate is generator output; change its template/tool instead.
+    exclude-paths:
+      - generated/**
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    # Managed by Hexlet, not by this repository's dependency updater.
+    exclude-paths:
+      - .github/workflows/hexlet-check.yml

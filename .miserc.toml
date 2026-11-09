@@ -1,0 +1,2 @@
+# This repository declares its complete toolchain; ignore unrelated home-level asdf tools.
+ignored_config_paths = ["~/.tool-versions"]

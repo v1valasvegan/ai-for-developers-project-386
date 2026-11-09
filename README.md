@@ -1,99 +1,84 @@
-### Hexlet tests and linter status:
+# Окошко
+
+Учебный сервис записи на звонки по мотивам Cal.com: владелец публикует доступное время, гость выбирает свободный слот и бронирует встречу.
+
+## Текущий этап и запуск
+
+Сейчас реализован только каркас: страница-заглушка, `GET /api/health`, генерация API и автоматические проверки. Сценарий бронирования ниже — план следующих шагов, а не готовая функциональность.
+
+Установите [mise](https://mise.jdx.dev/getting-started.html) и добавьте его в `PATH`. Версии инструментов закреплены в `mise.toml`, зависимости — в `package-lock.json` и `backend/Cargo.lock`.
+
+```bash
+mise trust
+mise install
+mise run install
+mise run dev
+```
+
+- Фронтенд: <http://127.0.0.1:5173>.
+- API: <http://127.0.0.1:3000/api/health>.
+- Серверы работают под управлением pitchfork: `mise daemons status`, `mise daemons logs`, остановка — `mise run stop`.
+- `mise run check` — все проверки, та же команда запускается в GitHub Actions на каждый push и еженедельно.
+- `mise run test` — сборка и дымовой HTTP-тест; `mise run lint` — Oxlint; `mise run fix` — форматирование.
+- `mise run generate` — перегенерация OpenAPI, клиентского SDK и серверных типов/маршрутов.
+
+Установка инструментов, первая загрузка генератора и проверки уязвимостей требуют сети. При занятых портах серверы сообщат ошибку, чужие процессы автоматически не завершаются. `vite preview` используется только для дымового теста, не для production.
+
+## Сценарий владельца и гостя
+
+1. Единственный, заранее заданный владелец открывает страницу управления и создаёт тип встречи: «Знакомство», описание «Обсудим ваш проект», длительность — 30 минут.
+2. Гость открывает публичную страницу без регистрации и выбирает этот тип встречи.
+3. В календаре на ближайшие 14 календарных дней выбирает дату и свободное время. Длительность слота соответствует выбранному типу встречи.
+4. Вводит имя и email, подтверждает запись.
+5. Сервис проверяет доступность и создаёт запись. Гость видит подтверждение с датой, временем и часовым поясом. Если время уже занято, сервис предлагает выбрать другой слот.
+6. Владелец открывает список предстоящих встреч всех типов и видит новую запись с типом встречи, датой, временем и данными гостя. Пересекающиеся с ней интервалы больше нельзя забронировать.
+
+## Обязательные функции и ограничения
+
+- Один заранее заданный владелец; авторизации, личных кабинетов и регистрации нет.
+- Тип встречи содержит название, описание и длительность.
+- Окно записи — 14 календарных дней, сдвигающееся с течением времени.
+- Длительность слота равна длительности выбранного типа встречи.
+- Любые пересечения записей владельца запрещены, включая частичное наложение разных типов. Следующая встреча может начинаться ровно в момент окончания предыдущей.
+- Проверка пересечений действует и для одновременно пришедших запросов: из двух конфликтующих записей создаётся только одна.
+- Нет интеграций с внешними календарями и уведомлений. Занятость вне сервиса автоматически не учитывается.
+- Отмена, перенос, оплата и встроенная видеосвязь не входят в базовый объём проекта.
+
+## Время и расписание
+
+Согласованное поведение:
+
+- Владелец видит время в своём часовом поясе, гость — в своём. Пояс гостя определяется браузером, показан явно и доступен для изменения.
+- Шаг доступных стартов — 15 минут независимо от длительности типа встречи: например, часовую встречу можно начать в 10:00, 10:15 или 10:30.
+- Старт доступен, только если весь интервал встречи помещается в рабочие часы и не пересекается с существующими записями.
+
+Расписание владельца:
+
+- Часовой пояс — `Europe/Moscow` (московское время).
+- Рабочие дни — понедельник–пятница, часы — 10:00–18:00.
+- Окно записи — 14 календарных дней начиная с завтра по московскому времени: от 00:00 завтрашнего дня включительно до 00:00 дня через 15 дней от сегодня, не включая эту границу. Выходные входят в окно, но слотов на них нет.
+- Окно сдвигается при наступлении нового дня в `Europe/Moscow`; отображение времени в поясе гостя не меняет его границы.
+
+## API и генерация
+
+- Бекенд — Rust + Axum, фронтенд — React + TypeScript + Vite + Mantine.
+- `api/main.tsp` → TypeSpec OpenAPI emitter → `api/generated/openapi.yaml` (OpenAPI 3.0).
+- `@hey-api/openapi-ts` генерирует TypeScript SDK с Fetch-клиентом в `frontend/src/api/generated/`.
+- OpenAPI Generator `rust-axum` генерирует серверные типы и маршруты в `backend/generated/`. Реализация обработчиков — в `backend/src/`. Генератор имеет статус beta; сейчас совместимость проверяется на health-контракте.
+- OpenAPI Generator требует Java только для генерации: версия JDK, версия генератора и SHA-256 его JAR закреплены в `mise.toml`. JAR загружается из Maven Central и проверяется перед запуском.
+- TypeScript закреплён на 6.0.3: используемый SDK-генератор несовместим с API компилятора TypeScript 7.
+- Сгенерированные файлы не редактируются вручную: общая проверка повторяет генерацию и падает при расхождении.
+- Коммиты — Conventional Commits; формат проверяется локальным хуком и в CI. Правила проверок и согласованные исключения описаны в [docs/quality-gates.md](docs/quality-gates.md).
+- Dependabot еженедельно предлагает обновления npm, Cargo и GitHub Actions через PR без автоматического слияния. Конфигурация начнёт действовать после попадания в default branch; версии инструментов в `mise.toml` обновляются вручную.
+
+## Хранение данных
+
+По заданию допустимы память процесса и база данных; сохранение после перезапуска не является отдельным условием приёмки. Способ хранения пока не выбран. Если используется память процесса, перезапуск сбрасывает записи — это ограничение должно быть явно указано здесь для готового приложения.
+
+## Документация выбранных инструментов
+
+Каркас собран по официальным руководствам: [Axum](https://docs.rs/axum/0.8.9/axum/), [Vite](https://vite.dev/guide/), [Mantine](https://mantine.dev/guides/vite/), [TypeSpec OpenAPI](https://typespec.io/docs/emitters/openapi3/openapi/), [Hey API](https://heyapi.dev/openapi-ts/get-started), [mise](https://mise.jdx.dev/getting-started.html).
+
+## Статус проверок Хекслета
+
 [![Actions Status](https://github.com/v1valasvegan/ai-for-developers-project-386/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/v1valasvegan/ai-for-developers-project-386/actions)
-
-## Frontend
-
-Frontend is implemented as a separate app in `frontend/` with:
-
-- React
-- Vite
-- TypeScript
-- Mantine UI
-- React Query
-
-### Quick start (make)
-
-```bash
-make install
-make dev
-```
-
-`make dev` runs Go backend and frontend together.
-
-Use mock mode when needed:
-
-```bash
-make dev-mock
-```
-
-`make dev-mock` runs Prism mock and frontend together (frontend points to `http://127.0.0.1:4010`).
-
-If port `4010` is busy from an old Prism process, run:
-
-```bash
-make stop-mock
-```
-
-If port `3000` is busy from an old backend process, run:
-
-```bash
-make stop-backend
-```
-
-### Run directly
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Set backend URL through env variable:
-
-```bash
-VITE_API_URL=http://localhost:3000/api/v1
-```
-
-### Contract and Prism
-
-```bash
-make api-build
-make api-mock
-make frontend-dev-mock
-```
-
-### Implemented pages
-
-- Guest page (`/`): event type list, slot selection for 14-day window, booking form.
-- Admin page (`/admin`): create/edit event types, view upcoming bookings.
-
-All UI actions are connected to the API contract and use HTTP only.
-
-## Backend (Go, in-memory)
-
-Backend is implemented in `backend/` and serves API for frontend client.
-
-- run backend: `make backend-dev`
-- default port: `3000`
-- health check: `GET http://localhost:3000/healthz`
-
-Storage is in-memory for this stage (data resets on service restart).
-
-## MCP setup
-
-- Render MCP (OpenCode): see `docs/mcp-render.md`
-
-## Docker deploy
-
-- Docker image is built from root `Dockerfile`.
-- Container starts app automatically.
-- App listens on `PORT` env variable.
-
-Build and run locally:
-
-```bash
-docker build -t hexlet-ai-fe .
-docker run --rm -e PORT=3000 -p 3000:3000 hexlet-ai-fe
-```
-
-Public app URL: `https://<your-render-service>.onrender.com`

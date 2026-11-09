@@ -1,29 +1,43 @@
 {
-  "name": "hexlet-ai",
-  "version": "1.0.0",
-  "description": "[![Actions Status](https://github.com/v1valasvegan/ai-for-developers-project-386/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/v1valasvegan/ai-for-developers-project-386/actions)",
-  "main": "index.js",
+  "name": "okoshko",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "api:generate": "node scripts/generate.mjs",
+    "lint": "oxlint --deny-warnings frontend/src frontend/vite.config.ts scripts tests openapi-ts.config.ts commitlint.config.js",
+    "format:check": "oxfmt --ignore-path .gitignore --ignore-path .oxfmtignore --check .",
+    "format": "oxfmt --ignore-path .gitignore --ignore-path .oxfmtignore .",
+    "typecheck": "npm run typecheck --workspace frontend",
+    "lint:unused": "knip",
+    "build": "npm run build --workspace frontend",
+    "test": "vitest run",
+    "commitlint": "node scripts/check-commits.mjs"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/v1valasvegan/ai-for-developers-project-386.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/v1valasvegan/ai-for-developers-project-386/issues"
-  },
-  "homepage": "https://github.com/v1valasvegan/ai-for-developers-project-386#readme",
   "devDependencies": {
-    "@typespec/compiler": "^1.11.0",
-    "@typespec/http": "^1.11.0",
-    "@typespec/openapi": "^1.11.0",
-    "@typespec/openapi3": "^1.11.0",
-    "@typespec/rest": "^0.81.0",
-    "concurrently": "^9.2.1"
+    "@commitlint/cli": "21.2.4",
+    "@commitlint/config-conventional": "21.2.4",
+    "@hey-api/openapi-ts": "0.99.0",
+    "@typespec/compiler": "1.17.0",
+    "@typespec/http": "1.17.0",
+    "@typespec/openapi": "1.17.0",
+    "@typespec/openapi3": "1.17.0",
+    "knip": "6.44.1",
+    "oxfmt": "0.75.0",
+    "oxlint": "1.90.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5",
+    "yaml": "2.9.1"
+  },
+  "overrides": {
+    "@hey-api/json-schema-ref-parser": {
+      "js-yaml": "4.3.2"
+    },
+    "@scalar/json-magic": {
+      "undici": "7.30.1"
+    }
   }
 }

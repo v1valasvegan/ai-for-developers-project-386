@@ -1,0 +1,52 @@
+amends "package://github.com/jdx/hk/releases/download/v2.11.0/hk@2.11.0#/Config.pkl"
+
+steps {
+  ["format"] {
+    glob = List("**/*.ts", "**/*.tsx", "**/*.mjs", "**/*.js", "**/*.json", "**/*.jsonc", "**/*.html", "**/*.md", "**/*.yml", "**/*.yaml")
+    exclude = List("api/generated/**", "backend/generated/**", "frontend/src/api/generated/**", ".github/workflows/hexlet-check.yml", ".github/workflows/README.md", "package-lock.json")
+    check = "npx --no-install oxfmt --ignore-path .gitignore --ignore-path .oxfmtignore --check {{files}}"
+  }
+  ["oxlint"] {
+    glob = List("frontend/src/**/*.tsx", "frontend/src/**/*.ts", "frontend/vite.config.ts", "scripts/*.mjs", "tests/*.mjs", "openapi-ts.config.ts", "commitlint.config.js")
+    exclude = List("frontend/src/api/generated/**")
+    check = "npx --no-install oxlint --deny-warnings {{files}}"
+  }
+  ["rustfmt"] {
+    glob = List("backend/src/**/*.rs")
+    check = "rustfmt --check --edition 2024 {{files}}"
+  }
+}
+
+hooks {
+  ["pre-commit"] {
+    fix = false
+    stash = "git"
+    steps {
+      ["secrets"] { check = "node scripts/check-secrets.mjs --staged" }
+    }
+  }
+  ["commit-msg"] {
+    steps {
+      ["commitlint"] { check = "npx --no-install commitlint --strict --edit {{commit_msg_file}}" }
+    }
+  }
+  ["pre-push"] {
+    steps {
+      ["check"] { check = "mise run check" }
+    }
+  }
+  ["check"] {
+    steps {
+      ["format-all"] { check = "npm run format:check" }
+      ["lint-all"] { check = "npm run lint" }
+      ["rustfmt-all"] { check = "cargo fmt --manifest-path backend/Cargo.toml --package okoshko-backend --check" }
+      ["clippy"] { check = "cargo clippy --locked --manifest-path backend/Cargo.toml --all-targets --all-features -- -D warnings" }
+      ["types"] { check = "npm run typecheck" }
+      ["dependencies"] { check = "cargo-machete backend" }
+      ["unused-js"] { check = "npm run lint:unused" }
+      ["actions"] { check = "jactionlint" }
+      ["agents"] { check = "agnix --strict AGENTS.md" }
+      ["openapi"] { check = "vacuum lint --fail-severity warn api/generated/openapi.yaml" }
+    }
+  }
+}

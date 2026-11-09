@@ -25,7 +25,7 @@ pitchfork = "2.32.4"
 
 [tasks.install]
 description = "Install dependencies and local Git hooks"
-run = ["npm ci", "cargo fetch --locked --manifest-path backend/Cargo.toml", "hk install"]
+run = ["npm ci", "cargo fetch --locked --manifest-path backend/Cargo.toml", "hk install --mise"]
 
 [tasks.generate]
 description = "Generate OpenAPI, frontend SDK and Axum server types/routes"

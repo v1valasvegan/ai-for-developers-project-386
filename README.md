@@ -4,7 +4,9 @@
 
 ## Текущий этап и запуск
 
-Сейчас реализован только каркас: страница-заглушка, `GET /api/health`, генерация API и автоматические проверки. Сценарий бронирования ниже — план следующих шагов, а не готовая функциональность.
+Сейчас реализованы информационная главная страница с переходом на `/book`, страница-заглушка записи с возвратом на главную, `GET /api/health`, генерация API и автоматические проверки. Настоящего бронирования пока нет: сценарий ниже — план следующих шагов, а не готовая функциональность.
+
+Словарь проекта — [GLOSSARY.md](GLOSSARY.md), принятые решения — [docs/adr/](docs/adr/).
 
 Установите [mise](https://mise.jdx.dev/getting-started.html) и добавьте его в `PATH`. Версии инструментов закреплены в `mise.toml`, зависимости — в `package-lock.json` и `backend/Cargo.lock`.
 
@@ -80,5 +82,7 @@ mise run dev
 Каркас собран по официальным руководствам: [Axum](https://docs.rs/axum/0.8.9/axum/), [Vite](https://vite.dev/guide/), [Mantine](https://mantine.dev/guides/vite/), [TypeSpec OpenAPI](https://typespec.io/docs/emitters/openapi3/openapi/), [Hey API](https://heyapi.dev/openapi-ts/get-started), [mise](https://mise.jdx.dev/getting-started.html).
 
 ## Статус проверок Хекслета
+
+Workflow Хекслета управляется учебной платформой и требует Actions-секрет `HEXLET_ID`. На push от Dependabot обычные Actions-секреты недоступны: для таких запусков `HEXLET_ID` должен быть отдельно настроен владельцем в Dependabot secrets, если это требуется платформой. Ошибка `Input required and not supplied: hexlet-id` возникает до проверки кода приложения.
 
 [![Actions Status](https://github.com/v1valasvegan/ai-for-developers-project-386/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/v1valasvegan/ai-for-developers-project-386/actions)

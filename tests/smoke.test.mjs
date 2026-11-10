@@ -95,7 +95,21 @@ test("built frontend and generated API server start; SDK response matches the co
 
     const page = await fetch(frontendUrl);
     expect(page.status).toBe(200);
-    expect(await page.text()).toContain("<title>Окошко</title>");
+    const html = await page.text();
+    expect(html).toContain("<title>Окошко — запись на звонок без регистрации</title>");
+    expect(html).toContain("одним заранее заданным владельцем календаря");
+    expect(html).not.toContain("для независимых специалистов");
+
+    for (const path of ["/book", "/book/"]) {
+      const bookingPage = await fetch(`${frontendUrl}${path}`);
+      expect(bookingPage.status).toBe(200);
+      expect(bookingPage.headers.get("content-type")).toContain("text/html");
+      expect(await bookingPage.text()).toContain('id="root"');
+    }
+
+    const ornament = await fetch(`${frontendUrl}/window-crown.svg`);
+    expect(ornament.status).toBe(200);
+    expect(ornament.headers.get("content-type")).toContain("image/svg+xml");
 
     const result = await getHealth({
       client: createClient({ baseUrl: frontendUrl }),

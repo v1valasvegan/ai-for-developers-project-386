@@ -10,7 +10,7 @@ if (!root) throw new Error("Не найден корневой элемент п
 createRoot(root).render(
   <StrictMode>
     <MantineProvider defaultColorScheme="light">
-      <App />
+      <App path={window.location.pathname} />
     </MantineProvider>
   </StrictMode>,
 );

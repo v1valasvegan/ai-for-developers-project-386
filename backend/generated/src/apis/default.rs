@@ -46,6 +46,27 @@ pub enum GetHealthResponse {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[must_use]
 #[allow(clippy::large_enum_variant)]
+pub enum ListMeetingTypeSlotsResponse {
+    /// The request has succeeded.
+    Status200_TheRequestHasSucceeded
+    (models::SlotList)
+    ,
+    /// Указанный тип встречи не существует.
+    Status404
+    (models::ApiError)
+    ,
+    /// Непредвиденная внутренняя ошибка.
+    Status500
+    (models::ApiError)
+    ,
+    /// Хранилище временно недоступно.
+    Status503
+    (models::ApiError)
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[must_use]
+#[allow(clippy::large_enum_variant)]
 pub enum ListMeetingTypesResponse {
     /// The request has succeeded.
     Status200_TheRequestHasSucceeded
@@ -85,6 +106,16 @@ pub trait Default<E: std::fmt::Debug + Send + Sync + 'static = ()>: super::Error
     host: &Host,
     cookies: &CookieJar,
     ) -> Result<GetHealthResponse, E>;
+
+    /// ListMeetingTypeSlots - GET /api/meeting-types/{id}/slots
+    async fn list_meeting_type_slots(
+    &self,
+    
+    method: &Method,
+    host: &Host,
+    cookies: &CookieJar,
+      path_params: &models::ListMeetingTypeSlotsPathParams,
+    ) -> Result<ListMeetingTypeSlotsResponse, E>;
 
     /// ListMeetingTypes - GET /api/meeting-types
     async fn list_meeting_types(

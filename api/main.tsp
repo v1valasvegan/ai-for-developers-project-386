@@ -136,3 +136,50 @@ op createMeetingType(
   @statusCode statusCode: 201;
   @body body: MeetingType;
 } | ValidationError | MeetingTypeExists | StorageUnavailable | InternalError;
+
+/** Свободный интервал выбранного типа встречи. */
+model Slot {
+  /** Начало включительно, момент UTC. */
+  @example(utcDateTime.fromISO("2026-11-11T07:00:00Z"))
+  startsAt: utcDateTime;
+  /** Окончание исключительно, момент UTC. */
+  @example(utcDateTime.fromISO("2026-11-11T07:30:00Z"))
+  endsAt: utcDateTime;
+}
+
+/** Доступность на всё актуальное окно, даже при пустом items. */
+model SlotList {
+  /** Серверное время расчёта. */
+  @example(utcDateTime.fromISO("2026-11-10T12:00:00Z"))
+  serverTime: utcDateTime;
+  /** Включённая граница окна: московское завтра 00:00. */
+  @example(utcDateTime.fromISO("2026-11-10T21:00:00Z"))
+  windowStart: utcDateTime;
+  /** Исключённая граница: московская дата D+15 00:00. */
+  @example(utcDateTime.fromISO("2026-11-24T21:00:00Z"))
+  windowEnd: utcDateTime;
+  /** Пояс расписания владельца. */
+  @example("Europe/Moscow")
+  timeZone: "Europe/Moscow";
+  /** Свободные слоты, отсортированные по началу. */
+  @example(#[#{ startsAt: utcDateTime.fromISO("2026-11-11T07:00:00Z"), endsAt: utcDateTime.fromISO("2026-11-11T07:30:00Z") }])
+  items: Slot[];
+}
+
+/** Указанный тип встречи не существует. */
+@error
+model MeetingTypeNotFound {
+  @statusCode statusCode: 404;
+  @body body: ApiError;
+}
+
+/** Получить свободные слоты типа; просмотр ничего не резервирует. */
+@tag("Default")
+@opExample(#{ returnType: #{ serverTime: utcDateTime.fromISO("2026-11-10T12:00:00Z"), windowStart: utcDateTime.fromISO("2026-11-10T21:00:00Z"), windowEnd: utcDateTime.fromISO("2026-11-24T21:00:00Z"), timeZone: "Europe/Moscow", items: #[] } })
+@operationId("listMeetingTypeSlots")
+@get
+@route("/api/meeting-types/{id}/slots")
+op listMeetingTypeSlots(
+  /** Код типа встречи. */
+  @path id: string,
+): SlotList | MeetingTypeNotFound | StorageUnavailable | InternalError;

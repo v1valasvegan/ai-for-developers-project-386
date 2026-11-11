@@ -73,6 +73,15 @@ pub fn check_xss_map<T>(v: &std::collections::HashMap<String, T>) -> std::result
 
 
 
+    #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+    #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+    pub struct ListMeetingTypeSlotsPathParams {
+            /// Код типа встречи.
+                pub id: String,
+    }
+
+
+
 
 
 /// Безопасное описание ошибки без внутренних технических подробностей.
@@ -774,6 +783,295 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MeetingTypeL
                     match <MeetingTypeList as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
                         std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into MeetingTypeList - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Свободный интервал выбранного типа встречи.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct Slot {
+    /// Начало включительно, момент UTC.
+    #[serde(rename = "startsAt")]
+    pub starts_at: chrono::DateTime::<chrono::Utc>,
+
+    /// Окончание исключительно, момент UTC.
+    #[serde(rename = "endsAt")]
+    pub ends_at: chrono::DateTime::<chrono::Utc>,
+
+}
+
+
+
+impl Slot {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(starts_at: chrono::DateTime::<chrono::Utc>, ends_at: chrono::DateTime::<chrono::Utc>, ) -> Slot {
+        Slot {
+ starts_at,
+ ends_at,
+        }
+    }
+}
+
+/// Converts the Slot value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for Slot {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+            // Skipping startsAt in query parameter serialization
+
+            // Skipping endsAt in query parameter serialization
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a Slot value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for Slot {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub starts_at: Vec<chrono::DateTime::<chrono::Utc>>,
+            pub ends_at: Vec<chrono::DateTime::<chrono::Utc>>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing Slot".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "startsAt" => intermediate_rep.starts_at.push(<chrono::DateTime::<chrono::Utc> as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "endsAt" => intermediate_rep.ends_at.push(<chrono::DateTime::<chrono::Utc> as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing Slot".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(Slot {
+            starts_at: intermediate_rep.starts_at.into_iter().next().ok_or_else(|| "startsAt missing in Slot".to_string())?,
+            ends_at: intermediate_rep.ends_at.into_iter().next().ok_or_else(|| "endsAt missing in Slot".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<Slot> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<Slot>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<Slot>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for Slot - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<Slot> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <Slot as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into Slot - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Доступность на всё актуальное окно, даже при пустом items.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct SlotList {
+    /// Серверное время расчёта.
+    #[serde(rename = "serverTime")]
+    pub server_time: chrono::DateTime::<chrono::Utc>,
+
+    /// Включённая граница окна: московское завтра 00:00.
+    #[serde(rename = "windowStart")]
+    pub window_start: chrono::DateTime::<chrono::Utc>,
+
+    /// Исключённая граница: московская дата D+15 00:00.
+    #[serde(rename = "windowEnd")]
+    pub window_end: chrono::DateTime::<chrono::Utc>,
+
+    /// Пояс расписания владельца.
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(rename = "timeZone")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub time_zone: String,
+
+    /// Свободные слоты, отсортированные по началу.
+    #[serde(rename = "items")]
+          #[validate(nested)]
+    pub items: Vec<models::Slot>,
+
+}
+
+
+
+impl SlotList {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(server_time: chrono::DateTime::<chrono::Utc>, window_start: chrono::DateTime::<chrono::Utc>, window_end: chrono::DateTime::<chrono::Utc>, time_zone: String, items: Vec<models::Slot>, ) -> SlotList {
+        SlotList {
+ server_time,
+ window_start,
+ window_end,
+ time_zone,
+ items,
+        }
+    }
+}
+
+/// Converts the SlotList value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for SlotList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+            // Skipping serverTime in query parameter serialization
+
+            // Skipping windowStart in query parameter serialization
+
+            // Skipping windowEnd in query parameter serialization
+
+
+            Some("timeZone".to_string()),
+            Some(self.time_zone.to_string()),
+
+            // Skipping items in query parameter serialization
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a SlotList value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for SlotList {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub server_time: Vec<chrono::DateTime::<chrono::Utc>>,
+            pub window_start: Vec<chrono::DateTime::<chrono::Utc>>,
+            pub window_end: Vec<chrono::DateTime::<chrono::Utc>>,
+            pub time_zone: Vec<String>,
+            pub items: Vec<Vec<models::Slot>>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing SlotList".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "serverTime" => intermediate_rep.server_time.push(<chrono::DateTime::<chrono::Utc> as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "windowStart" => intermediate_rep.window_start.push(<chrono::DateTime::<chrono::Utc> as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "windowEnd" => intermediate_rep.window_end.push(<chrono::DateTime::<chrono::Utc> as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "timeZone" => intermediate_rep.time_zone.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    "items" => return std::result::Result::Err("Parsing a container in this style is not supported in SlotList".to_string()),
+                    _ => return std::result::Result::Err("Unexpected key while parsing SlotList".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(SlotList {
+            server_time: intermediate_rep.server_time.into_iter().next().ok_or_else(|| "serverTime missing in SlotList".to_string())?,
+            window_start: intermediate_rep.window_start.into_iter().next().ok_or_else(|| "windowStart missing in SlotList".to_string())?,
+            window_end: intermediate_rep.window_end.into_iter().next().ok_or_else(|| "windowEnd missing in SlotList".to_string())?,
+            time_zone: intermediate_rep.time_zone.into_iter().next().ok_or_else(|| "timeZone missing in SlotList".to_string())?,
+            items: intermediate_rep.items.into_iter().next().ok_or_else(|| "items missing in SlotList".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<SlotList> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<SlotList>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<SlotList>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for SlotList - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<SlotList> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <SlotList as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into SlotList - {err}"#))
                     }
              },
              std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))

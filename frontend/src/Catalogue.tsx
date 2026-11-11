@@ -7,7 +7,13 @@ type CatalogueState =
   | { status: "ready"; items: MeetingType[] }
   | { status: "error" };
 
-export default function Catalogue({ showCode = false }: { showCode?: boolean }) {
+export default function Catalogue({
+  showCode = false,
+  onSelect,
+}: {
+  showCode?: boolean;
+  onSelect?: (id: string) => void;
+}) {
   const [state, setState] = useState<CatalogueState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
 
@@ -51,6 +57,11 @@ export default function Catalogue({ showCode = false }: { showCode?: boolean }) 
           {showCode ? <p className="catalogue-code">{type.id}</p> : null}
           <p className="catalogue-description">{type.description}</p>
           <p className="catalogue-duration">{type.durationMinutes} минут</p>
+          {onSelect ? (
+            <button className="page-link" type="button" onClick={() => onSelect(type.id)}>
+              Выбрать {type.title}
+            </button>
+          ) : null}
         </li>
       ))}
     </ul>

@@ -89,6 +89,46 @@ export type MeetingTypeList = {
     items: Array<MeetingType>;
 };
 
+/**
+ * Свободный интервал выбранного типа встречи.
+ */
+export type Slot = {
+    /**
+     * Начало включительно, момент UTC.
+     */
+    startsAt: string;
+    /**
+     * Окончание исключительно, момент UTC.
+     */
+    endsAt: string;
+};
+
+/**
+ * Доступность на всё актуальное окно, даже при пустом items.
+ */
+export type SlotList = {
+    /**
+     * Серверное время расчёта.
+     */
+    serverTime: string;
+    /**
+     * Включённая граница окна: московское завтра 00:00.
+     */
+    windowStart: string;
+    /**
+     * Исключённая граница: московская дата D+15 00:00.
+     */
+    windowEnd: string;
+    /**
+     * Пояс расписания владельца.
+     */
+    timeZone: 'Europe/Moscow';
+    /**
+     * Свободные слоты, отсортированные по началу.
+     */
+    items: Array<Slot>;
+};
+
 export type GetHealthData = {
     body?: never;
     path?: never;
@@ -173,3 +213,41 @@ export type CreateMeetingTypeResponses = {
 };
 
 export type CreateMeetingTypeResponse = CreateMeetingTypeResponses[keyof CreateMeetingTypeResponses];
+
+export type ListMeetingTypeSlotsData = {
+    body?: never;
+    path: {
+        /**
+         * Код типа встречи.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/meeting-types/{id}/slots';
+};
+
+export type ListMeetingTypeSlotsErrors = {
+    /**
+     * Указанный тип встречи не существует.
+     */
+    404: ApiError;
+    /**
+     * Непредвиденная внутренняя ошибка.
+     */
+    500: ApiError;
+    /**
+     * Хранилище временно недоступно.
+     */
+    503: ApiError;
+};
+
+export type ListMeetingTypeSlotsError = ListMeetingTypeSlotsErrors[keyof ListMeetingTypeSlotsErrors];
+
+export type ListMeetingTypeSlotsResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: SlotList;
+};
+
+export type ListMeetingTypeSlotsResponse = ListMeetingTypeSlotsResponses[keyof ListMeetingTypeSlotsResponses];

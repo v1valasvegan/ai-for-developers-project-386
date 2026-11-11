@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createServer } from "node:net";
@@ -93,16 +93,23 @@ export async function startFrontend(backendUrl) {
   return { ...server, url: `http://127.0.0.1:${port}` };
 }
 
-export async function startBackend(databasePath) {
+export async function startBackend(databasePath, { time } = {}) {
+  const clockFile = `${databasePath}.clock`;
+  if (time) await writeFile(clockFile, time);
   const server = await startServer(
     "backend/target/debug/okoshko-backend",
     [],
     {
       BIND_ADDR: "127.0.0.1:0",
       DATABASE_PATH: databasePath,
+      OKOSHKO_TEST_CLOCK_FILE: time ? clockFile : "",
     },
     /Окошко API: http:\/\/127\.0\.0\.1:\d+/,
   );
   // The backend chooses its own available port and reports it on stdout.
-  return { ...server, url: server.logs.match(/http:\/\/127\.0\.0\.1:\d+/)[0] };
+  return {
+    ...server,
+    url: server.logs.match(/http:\/\/127\.0\.0\.1:\d+/)[0],
+    setTime: (value) => writeFile(clockFile, value),
+  };
 }

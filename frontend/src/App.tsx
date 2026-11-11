@@ -1,6 +1,6 @@
 import { Container } from "@mantine/core";
 import "./App.css";
-import Catalogue from "./Catalogue";
+import BookingFlow from "./BookingFlow";
 import OwnerTypes from "./OwnerTypes";
 
 const steps = [
@@ -166,7 +166,7 @@ function SchedulePreview() {
   );
 }
 
-function BookingCatalogue() {
+function BookingCatalogue({ path }: { path: string }) {
   return (
     <div className="landing">
       <Container size="xl" className="page-container">
@@ -189,10 +189,8 @@ function BookingCatalogue() {
           <div className="hero-copy">
             <p className="eyebrow">Страница записи</p>
             <h1 id="booking-title">Типы встреч</h1>
-            <p className="hero-description">
-              Посмотрите доступные типы встреч. Выбор времени и бронирование ещё в разработке.
-            </p>
-            <Catalogue />
+            <p className="hero-description">Выберите тип встречи, затем свободные день и время.</p>
+            <BookingFlow path={path} />
             <div className="hero-actions">
               <a className="page-link" href="/">
                 Вернуться на главную
@@ -206,7 +204,7 @@ function BookingCatalogue() {
 }
 
 export default function App({ path = "/" }: { path?: string }) {
-  if (path === "/book" || path === "/book/") return <BookingCatalogue />;
+  if (path === "/book" || path.startsWith("/book/")) return <BookingCatalogue path={path} />;
   if (path === "/owner" || path === "/owner/") return <OwnerTypes />;
   return (
     <div className="landing">

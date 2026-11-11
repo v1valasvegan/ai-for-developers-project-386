@@ -74,6 +74,7 @@ pub fn check_xss_map<T>(v: &std::collections::HashMap<String, T>) -> std::result
 
 
 
+
 /// Безопасное описание ошибки без внутренних технических подробностей.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
@@ -88,6 +89,12 @@ pub struct ApiError {
           #[validate(custom(function = "check_xss_string"))]
     pub message: String,
 
+    /// Сообщения только для ошибочных полей запроса.
+    #[serde(rename = "fieldErrors")]
+          #[validate(custom(function = "check_xss_map_string"))]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub field_errors: Option<std::collections::HashMap<String, String>>,
+
 }
 
 
@@ -98,6 +105,7 @@ impl ApiError {
         ApiError {
  code,
  message,
+ field_errors: None,
         }
     }
 }
@@ -115,6 +123,8 @@ impl std::fmt::Display for ApiError {
 
             Some("message".to_string()),
             Some(self.message.to_string()),
+
+            // Skipping fieldErrors in query parameter serialization
 
         ];
 
@@ -135,6 +145,7 @@ impl std::str::FromStr for ApiError {
         struct IntermediateRep {
             pub code: Vec<String>,
             pub message: Vec<String>,
+            pub field_errors: Vec<std::collections::HashMap<String, String>>,
         }
 
         let mut intermediate_rep = IntermediateRep::default();
@@ -156,6 +167,7 @@ impl std::str::FromStr for ApiError {
                     "code" => intermediate_rep.code.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     #[allow(clippy::redundant_clone)]
                     "message" => intermediate_rep.message.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    "fieldErrors" => return std::result::Result::Err("Parsing a container in this style is not supported in ApiError".to_string()),
                     _ => return std::result::Result::Err("Unexpected key while parsing ApiError".to_string())
                 }
             }
@@ -168,6 +180,7 @@ impl std::str::FromStr for ApiError {
         std::result::Result::Ok(ApiError {
             code: intermediate_rep.code.into_iter().next().ok_or_else(|| "code missing in ApiError".to_string())?,
             message: intermediate_rep.message.into_iter().next().ok_or_else(|| "message missing in ApiError".to_string())?,
+            field_errors: intermediate_rep.field_errors.into_iter().next(),
         })
     }
 }
@@ -197,6 +210,163 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<ApiError> {
                     match <ApiError as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
                         std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into ApiError - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Поля владельца до нормализации и проверки сервером.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct CreateMeetingType {
+    /// Код: после нормализации 3–20 латинских букв, цифр и дефисов.
+    #[serde(rename = "id")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub id: String,
+
+    /// Название: после удаления пробелов по краям 1–120 символов.
+    #[serde(rename = "title")]
+    pub title: String,
+
+    /// Описание простым текстом: после удаления пробелов по краям 1–2000 символов.
+    #[serde(rename = "description")]
+    pub description: String,
+
+    /// Целое число 15–480 включительно, кратное 15.
+    #[serde(rename = "durationMinutes")]
+    pub duration_minutes: i32,
+
+}
+
+
+
+impl CreateMeetingType {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(id: String, title: String, description: String, duration_minutes: i32, ) -> CreateMeetingType {
+        CreateMeetingType {
+ id,
+ title,
+ description,
+ duration_minutes,
+        }
+    }
+}
+
+/// Converts the CreateMeetingType value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for CreateMeetingType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("id".to_string()),
+            Some(self.id.to_string()),
+
+
+            Some("title".to_string()),
+            Some(self.title.to_string()),
+
+
+            Some("description".to_string()),
+            Some(self.description.to_string()),
+
+
+            Some("durationMinutes".to_string()),
+            Some(self.duration_minutes.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a CreateMeetingType value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for CreateMeetingType {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub id: Vec<String>,
+            pub title: Vec<String>,
+            pub description: Vec<String>,
+            pub duration_minutes: Vec<i32>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing CreateMeetingType".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "id" => intermediate_rep.id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "title" => intermediate_rep.title.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "description" => intermediate_rep.description.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "durationMinutes" => intermediate_rep.duration_minutes.push(<i32 as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing CreateMeetingType".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(CreateMeetingType {
+            id: intermediate_rep.id.into_iter().next().ok_or_else(|| "id missing in CreateMeetingType".to_string())?,
+            title: intermediate_rep.title.into_iter().next().ok_or_else(|| "title missing in CreateMeetingType".to_string())?,
+            description: intermediate_rep.description.into_iter().next().ok_or_else(|| "description missing in CreateMeetingType".to_string())?,
+            duration_minutes: intermediate_rep.duration_minutes.into_iter().next().ok_or_else(|| "durationMinutes missing in CreateMeetingType".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<CreateMeetingType> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<CreateMeetingType>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<CreateMeetingType>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for CreateMeetingType - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<CreateMeetingType> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <CreateMeetingType as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into CreateMeetingType - {err}"#))
                     }
              },
              std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
@@ -342,7 +512,6 @@ pub struct MeetingType {
     #[serde(rename = "title")]
     #[validate(
             length(min = 1, max = 120),
-          custom(function = "check_xss_string"),
     )]
     pub title: String,
 
@@ -350,7 +519,6 @@ pub struct MeetingType {
     #[serde(rename = "description")]
     #[validate(
             length(min = 1, max = 2000),
-          custom(function = "check_xss_string"),
     )]
     pub description: String,
 

@@ -915,6 +915,50 @@ p {
     display: none;
   }
 }
+.owner-page {
+  padding-block: 32px 64px;
+}
+.owner-page h1 {
+  font-size: clamp(32px, 6vw, 48px);
+  font-weight: 500;
+}
+.type-form {
+  display: grid;
+  gap: 18px;
+  max-width: 40rem;
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.type-form .page-link {
+  justify-self: start;
+  cursor: pointer;
+}
+.type-form .page-link:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+.code-preview,
+.catalogue-code {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0;
+}
+.type-form [role="alert"] {
+  color: var(--red);
+}
+.owner-toast {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  max-width: calc(100vw - 44px);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--red);
+  padding: 16px 20px;
+  background: var(--paper);
+  box-shadow: 0 4px 16px #24292318;
+}
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

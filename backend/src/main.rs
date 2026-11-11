@@ -1,3 +1,5 @@
+mod meeting_types;
+mod request_validation;
 mod storage;
 
 use async_trait::async_trait;
@@ -7,9 +9,12 @@ use http::Method;
 use okoshko_api::{
     apis::{
         ErrorHandler,
-        default::{Default as ServiceApi, GetHealthResponse, ListMeetingTypesResponse},
+        default::{
+            CreateMeetingTypeResponse, Default as ServiceApi, GetHealthResponse,
+            ListMeetingTypesResponse,
+        },
     },
-    models::{ApiError, Health},
+    models::{ApiError, CreateMeetingType, Health},
 };
 use std::{convert::Infallible, path::PathBuf, sync::Arc};
 
@@ -22,6 +27,40 @@ impl ErrorHandler<Infallible> for Api {}
 
 #[async_trait]
 impl ServiceApi<Infallible> for Api {
+    async fn create_meeting_type(
+        &self,
+        _method: &Method,
+        _host: &Host,
+        _cookies: &CookieJar,
+        body: &CreateMeetingType,
+    ) -> Result<CreateMeetingTypeResponse, Infallible> {
+        let path = self.database_path.clone();
+        let input = match meeting_types::normalize(body) {
+            Ok(input) => input,
+            Err(error) => return Ok(CreateMeetingTypeResponse::Status400(error)),
+        };
+        Ok(match tokio::task::spawn_blocking(move || storage::create_type(&path, input)).await {
+            Ok(Ok(item)) => CreateMeetingTypeResponse::Status201_TheRequestHasSucceededAndANewResourceHasBeenCreatedAsAResult(item),
+            Ok(Err(error)) if storage::is_duplicate_type(&error) => {
+                let message = "Этот код уже используется. Выберите другой".to_owned();
+                let mut body = ApiError::new("meeting_type_exists".to_owned(), message.clone());
+                body.field_errors = Some(std::collections::HashMap::from([("id".to_owned(), message)]));
+                CreateMeetingTypeResponse::Status409(body)
+            }
+            Ok(Err(error)) if storage::is_unavailable(&error) => {
+                eprintln!("Storage unavailable: {error}");
+                CreateMeetingTypeResponse::Status503(ApiError::new(
+                    "storage_unavailable".to_owned(),
+                    "Хранилище временно недоступно. Повторите попытку".to_owned(),
+                ))
+            }
+            error => {
+                eprintln!("Create type error: {error:?}");
+                CreateMeetingTypeResponse::Status500(ApiError::new("internal_error".to_owned(), "Не удалось создать тип встречи".to_owned()))
+            }
+        })
+    }
+
     async fn get_health(
         &self,
         _method: &Method,
@@ -79,7 +118,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let address = std::env::var("BIND_ADDR").unwrap_or_else(|_| "127.0.0.1:3000".to_owned());
     let listener = tokio::net::TcpListener::bind(&address).await?;
     println!("Окошко API: http://{}", listener.local_addr()?);
-    let app = okoshko_api::server::new(Arc::new(Api { database_path }));
+    let app = okoshko_api::server::new(Arc::new(Api { database_path })).layer(
+        axum::middleware::from_fn(request_validation::meeting_type_json),
+    );
     axum::serve(listener, app)
         .with_graceful_shutdown(async {
             if let Err(error) = tokio::signal::ctrl_c().await {

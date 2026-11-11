@@ -34,10 +34,12 @@ model MeetingType {
   @example("intro-30")
   id: string;
   /** Название простым текстом. */
+  @extension("x-plain-text", true)
   @minLength(1) @maxLength(120)
   @example("Знакомство")
   title: string;
   /** Описание простым текстом, не HTML. */
+  @extension("x-plain-text", true)
   @minLength(1) @maxLength(2000)
   @example("Обсудим ваш вопрос")
   description: string;
@@ -55,6 +57,7 @@ model MeetingTypeList {
 }
 
 /** Безопасное описание ошибки без внутренних технических подробностей. */
+@example(#{ code: "validation_error", message: "Проверьте поля формы", fieldErrors: #{ id: "Проверьте код типа встречи" } })
 model ApiError {
   /** Машиночитаемая причина ошибки. */
   @example("storage_unavailable")
@@ -62,6 +65,9 @@ model ApiError {
   /** Сообщение для человека. */
   @example("Хранилище временно недоступно. Повторите попытку")
   message: string;
+  /** Сообщения только для ошибочных полей запроса. */
+  @example(#{ id: "Этот код уже используется. Выберите другой" })
+  fieldErrors?: Record<string>;
 }
 
 /** Хранилище временно недоступно. */
@@ -85,3 +91,48 @@ model InternalError {
 @get
 @route("/api/meeting-types")
 op listMeetingTypes(): MeetingTypeList | StorageUnavailable | InternalError;
+
+/** Поля владельца до нормализации и проверки сервером. */
+model CreateMeetingType {
+  /** Код: после нормализации 3–20 латинских букв, цифр и дефисов. */
+  @example("Intro------30")
+  id: string;
+  /** Название: после удаления пробелов по краям 1–120 символов. */
+  @extension("x-plain-text", true)
+  @example("Знакомство")
+  title: string;
+  /** Описание простым текстом: после удаления пробелов по краям 1–2000 символов. */
+  @extension("x-plain-text", true)
+  @example("Обсудим ваш вопрос")
+  description: string;
+  /** Целое число 15–480 включительно, кратное 15. */
+  @example(30)
+  durationMinutes: int32;
+}
+
+/** Ошибки полей или некорректный запрос. */
+@error
+model ValidationError {
+  @statusCode statusCode: 400;
+  @body body: ApiError;
+}
+
+/** Нормализованный код уже используется. */
+@error
+model MeetingTypeExists {
+  @statusCode statusCode: 409;
+  @body body: ApiError;
+}
+
+/** Создать тип встречи с уникальным нормализованным кодом. */
+@tag("Default")
+@operationId("createMeetingType")
+@post
+@route("/api/meeting-types")
+op createMeetingType(
+  /** Поля нового типа встречи до серверной нормализации. */
+  @body body: CreateMeetingType
+): {
+  @statusCode statusCode: 201;
+  @body body: MeetingType;
+} | ValidationError | MeetingTypeExists | StorageUnavailable | InternalError;

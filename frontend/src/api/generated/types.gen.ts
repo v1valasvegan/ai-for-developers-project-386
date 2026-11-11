@@ -17,6 +17,34 @@ export type ApiError = {
      * Сообщение для человека.
      */
     message: string;
+    /**
+     * Сообщения только для ошибочных полей запроса.
+     */
+    fieldErrors?: {
+        [key: string]: string;
+    };
+};
+
+/**
+ * Поля владельца до нормализации и проверки сервером.
+ */
+export type CreateMeetingType = {
+    /**
+     * Код: после нормализации 3–20 латинских букв, цифр и дефисов.
+     */
+    id: string;
+    /**
+     * Название: после удаления пробелов по краям 1–120 символов.
+     */
+    title: string;
+    /**
+     * Описание простым текстом: после удаления пробелов по краям 1–2000 символов.
+     */
+    description: string;
+    /**
+     * Целое число 15–480 включительно, кратное 15.
+     */
+    durationMinutes: number;
 };
 
 /**
@@ -105,3 +133,43 @@ export type ListMeetingTypesResponses = {
 };
 
 export type ListMeetingTypesResponse = ListMeetingTypesResponses[keyof ListMeetingTypesResponses];
+
+export type CreateMeetingTypeData = {
+    /**
+     * Поля нового типа встречи до серверной нормализации.
+     */
+    body: CreateMeetingType;
+    path?: never;
+    query?: never;
+    url: '/api/meeting-types';
+};
+
+export type CreateMeetingTypeErrors = {
+    /**
+     * Ошибки полей или некорректный запрос.
+     */
+    400: ApiError;
+    /**
+     * Нормализованный код уже используется.
+     */
+    409: ApiError;
+    /**
+     * Непредвиденная внутренняя ошибка.
+     */
+    500: ApiError;
+    /**
+     * Хранилище временно недоступно.
+     */
+    503: ApiError;
+};
+
+export type CreateMeetingTypeError = CreateMeetingTypeErrors[keyof CreateMeetingTypeErrors];
+
+export type CreateMeetingTypeResponses = {
+    /**
+     * The request has succeeded and a new resource has been created as a result.
+     */
+    201: MeetingType;
+};
+
+export type CreateMeetingTypeResponse = CreateMeetingTypeResponses[keyof CreateMeetingTypeResponses];

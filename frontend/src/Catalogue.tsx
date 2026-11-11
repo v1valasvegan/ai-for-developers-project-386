@@ -7,7 +7,7 @@ type CatalogueState =
   | { status: "ready"; items: MeetingType[] }
   | { status: "error" };
 
-export default function Catalogue() {
+export default function Catalogue({ showCode = false }: { showCode?: boolean }) {
   const [state, setState] = useState<CatalogueState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
 
@@ -48,6 +48,7 @@ export default function Catalogue() {
       {state.items.map((type) => (
         <li key={type.id}>
           <h2>{type.title}</h2>
+          {showCode ? <p className="catalogue-code">{type.id}</p> : null}
           <p className="catalogue-description">{type.description}</p>
           <p className="catalogue-duration">{type.durationMinutes} минут</p>
         </li>

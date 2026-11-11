@@ -17,8 +17,22 @@ pub fn is_unavailable(error: &rusqlite::Error) -> bool {
     )
 }
 
+pub fn is_duplicate_type(error: &rusqlite::Error) -> bool {
+    matches!(error, rusqlite::Error::SqliteFailure(code, _) if code.extended_code == rusqlite::ffi::SQLITE_CONSTRAINT_PRIMARYKEY || code.extended_code == rusqlite::ffi::SQLITE_CONSTRAINT_UNIQUE)
+}
+
 pub fn initialize(path: &Path) -> rusqlite::Result<()> {
     Connection::open(path)?.execute_batch(include_str!("../migrations/001_meeting_types.sql"))
+}
+
+pub fn create_type(path: &Path, item: MeetingType) -> rusqlite::Result<MeetingType> {
+    let connection = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_WRITE)?;
+    connection.busy_timeout(std::time::Duration::from_secs(5))?;
+    connection.execute(
+        "INSERT INTO meeting_types (id, title, description, duration_minutes) VALUES (?1, ?2, ?3, ?4)",
+        rusqlite::params![item.id, item.title, item.description, item.duration_minutes],
+    )?;
+    Ok(item)
 }
 
 pub fn catalogue(path: &Path) -> rusqlite::Result<MeetingTypeList> {

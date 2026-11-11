@@ -12,6 +12,31 @@ use crate::{models, types::*};
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[must_use]
 #[allow(clippy::large_enum_variant)]
+pub enum CreateMeetingTypeResponse {
+    /// The request has succeeded and a new resource has been created as a result.
+    Status201_TheRequestHasSucceededAndANewResourceHasBeenCreatedAsAResult
+    (models::MeetingType)
+    ,
+    /// Ошибки полей или некорректный запрос.
+    Status400
+    (models::ApiError)
+    ,
+    /// Нормализованный код уже используется.
+    Status409
+    (models::ApiError)
+    ,
+    /// Непредвиденная внутренняя ошибка.
+    Status500
+    (models::ApiError)
+    ,
+    /// Хранилище временно недоступно.
+    Status503
+    (models::ApiError)
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[must_use]
+#[allow(clippy::large_enum_variant)]
 pub enum GetHealthResponse {
     /// The request has succeeded.
     Status200_TheRequestHasSucceeded
@@ -42,6 +67,16 @@ pub enum ListMeetingTypesResponse {
 #[async_trait]
 #[allow(clippy::ptr_arg)]
 pub trait Default<E: std::fmt::Debug + Send + Sync + 'static = ()>: super::ErrorHandler<E> {
+    /// CreateMeetingType - POST /api/meeting-types
+    async fn create_meeting_type(
+    &self,
+    
+    method: &Method,
+    host: &Host,
+    cookies: &CookieJar,
+            body: &models::CreateMeetingType,
+    ) -> Result<CreateMeetingTypeResponse, E>;
+
     /// GetHealth - GET /api/health
     async fn get_health(
     &self,

@@ -17,6 +17,7 @@ async function setup(run) {
 }
 async function createType(page, frontend) {
   await page.goto(`${frontend.url}/owner`);
+  await page.getByRole("tab", { name: "Типы встреч" }).click();
   await page.getByRole("textbox", { name: "Код типа встречи" }).fill("intro-30");
   await page.getByRole("textbox", { name: "Название" }).fill("Знакомство");
   await page.getByRole("textbox", { name: "Описание" }).fill("Обсудим вопрос");
@@ -33,7 +34,7 @@ async function choose(page, frontend) {
   await page.getByLabel("Email", { exact: true }).fill("Anna@Example.com");
 }
 
-test("owner creates a type, guest books and complete confirmation matches the real owner API", async ({
+test("owner creates a type, guest books and complete confirmation matches the real owner list", async ({
   page,
 }) => {
   await setup(async (backend, frontend) => {
@@ -74,6 +75,24 @@ test("owner creates a type, guest books and complete confirmation matches the re
     await expect(page.getByRole("heading", { name: "Запись подтверждена" })).toHaveCount(0);
     expect((await fetch(`${backend.url}/api/bookings`).then((r) => r.json())).items).toHaveLength(
       1,
+    );
+    await page.goto(`${frontend.url}/owner`);
+    await expect(page.getByRole("tab", { name: "Встречи" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    const meetings = page.getByRole("list", { name: "Текущие и предстоящие встречи" });
+    await expect(meetings.getByRole("heading", { name: "Знакомство" })).toBeVisible();
+    await expect(meetings.getByText("Анна", { exact: true })).toBeVisible();
+    await expect(meetings.getByText("Anna@Example.com", { exact: true })).toBeVisible();
+    await expect(
+      meetings.getByText("11 ноября 2026 г. · 10:15–10:45", { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText("Europe/Moscow", { exact: true })).toBeVisible();
+    await page.reload();
+    await expect(meetings.getByText("Анна", { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
     );
   });
 });

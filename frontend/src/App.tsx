@@ -1,7 +1,7 @@
 import { Container } from "@mantine/core";
 import "./App.css";
 import BookingFlow from "./BookingFlow";
-import OwnerTypes from "./OwnerTypes";
+import Owner from "./Owner";
 
 const steps = [
   {
@@ -205,7 +205,7 @@ function BookingCatalogue({ path }: { path: string }) {
 
 export default function App({ path = "/" }: { path?: string }) {
   if (path === "/book" || path.startsWith("/book/")) return <BookingCatalogue path={path} />;
-  if (path === "/owner" || path === "/owner/") return <OwnerTypes />;
+  if (path === "/owner" || path === "/owner/") return <Owner />;
   return (
     <div className="landing">
       <a className="skip-link" href="#main">

@@ -37,7 +37,9 @@ async function withOwner(run) {
         <App path="/owner" />
       </MantineProvider>,
     );
-    await run(userEvent.setup(), backend);
+    const owner = userEvent.setup();
+    await owner.click(screen.getByRole("tab", { name: "Типы встреч" }));
+    await run(owner, backend);
   } finally {
     cleanup();
     await backend?.stop();

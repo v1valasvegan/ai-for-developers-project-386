@@ -11,6 +11,7 @@ test("an owner creates a type and a guest reads it from the real catalogue", asy
     await page.goto(frontend.url);
     await page.getByRole("link", { name: "Управление", exact: true }).click();
     await expect(page).toHaveURL(`${frontend.url}/owner`);
+    await page.getByRole("tab", { name: "Типы встреч" }).click();
     await expect(page.getByText("Пока нет доступных типов встреч")).toBeVisible();
     await page.getByRole("textbox", { name: "Код типа встречи" }).fill(" --Intro------30-- ");
     await expect(page.getByText("Будет сохранён код: intro-30")).toBeVisible();

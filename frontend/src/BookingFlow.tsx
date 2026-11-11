@@ -85,6 +85,7 @@ function TimeStep({
   const [state, setState] = useState<AvailabilityState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   const [chosenDate, setChosenDate] = useState("");
+  const requestedStart = parseStart(startsAt);
   useEffect(() => {
     const controller = new AbortController();
     async function load() {
@@ -127,7 +128,7 @@ function TimeStep({
           },
           compatible: availability
             .filter(({ slots }) =>
-              slots.items.some((slot) => Date.parse(slot.startsAt) === parseStart(startsAt)),
+              slots.items.some((slot) => Date.parse(slot.startsAt) === requestedStart),
             )
             .map(({ type }) => type),
         });
@@ -146,7 +147,7 @@ function TimeStep({
     }
     void load();
     return () => controller.abort();
-  }, [id, startsAt, attempt]);
+  }, [id, requestedStart, attempt]);
 
   const back = (
     <button className="page-link" type="button" onClick={() => navigate("/book")}>

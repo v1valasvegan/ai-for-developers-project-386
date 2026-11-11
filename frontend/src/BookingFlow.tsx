@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import Catalogue from "./Catalogue";
 import { listMeetingTypes, listMeetingTypeSlots } from "./api/generated/sdk.gen";
-import type { MeetingType, SlotList } from "./api/generated/types.gen";
+import type { Booking, MeetingType, SlotList } from "./api/generated/types.gen";
+import GuestDetails, { type Attempt, type Guest } from "./GuestDetails";
 
 function localDate(instant: string | number, timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -60,11 +61,23 @@ function TimeStep({
   startsAt,
   timeZone,
   navigate,
+  guest,
+  setGuest,
+  onSuccess,
+  attempt: submission,
+  setAttempt: setSubmission,
+  onUnavailable,
 }: {
   id: string;
   startsAt: string | null;
   timeZone: string;
   navigate: (path: string) => void;
+  guest: Guest;
+  setGuest: (guest: Guest) => void;
+  onSuccess: (booking: Booking) => void;
+  attempt: Attempt | null;
+  setAttempt: (attempt: Attempt | null) => void;
+  onUnavailable: (message: string) => void;
 }) {
   const [state, setState] = useState<AvailabilityState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
@@ -160,10 +173,24 @@ function TimeStep({
           {timeLabel(selected.startsAt, timeZone)}–{timeLabel(selected.endsAt, timeZone)} ·{" "}
           {timeZone}
         </p>
-        <p>Следующий шаг — имя и email. Создание записи ещё в разработке.</p>
+        <GuestDetails
+          id={id}
+          startsAt={selected.startsAt}
+          guest={guest}
+          setGuest={setGuest}
+          onSuccess={onSuccess}
+          attempt={submission}
+          setAttempt={setSubmission}
+          onUnavailable={(message) => {
+            onUnavailable(message);
+            setState({ status: "loading" });
+            setAttempt((value) => value + 1);
+          }}
+        />
         <button
           type="button"
           className="page-link"
+          disabled={submission !== null}
           onClick={() => navigate(`/book/${encodeURIComponent(id)}`)}
         >
           Назад
@@ -245,6 +272,10 @@ export default function BookingFlow({ path }: { path: string }) {
     search: typeof window === "undefined" ? "" : window.location.search,
   }));
   const [timeZone, setTimeZone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [guest, setGuest] = useState<Guest>({ name: "", email: "" });
+  const [confirmed, setConfirmed] = useState<Booking | null>(null);
+  const [attempt, setAttempt] = useState<Attempt | null>(null);
+  const [notice, setNotice] = useState("");
   useEffect(() => {
     const onPop = () =>
       setLocation({ path: window.location.pathname, search: window.location.search });
@@ -261,6 +292,9 @@ export default function BookingFlow({ path }: { path: string }) {
   } catch {
     id = "invalid/link";
   }
+  const activeId = attempt?.body.meetingTypeId ?? id;
+  const activeStart =
+    attempt?.body.startsAt ?? new URLSearchParams(location.search).get("startsAt");
   const zones = [
     ...new Set([timeZone, "UTC", "Europe/Moscow", ...Intl.supportedValuesOf("timeZone")]),
   ].sort();
@@ -281,13 +315,51 @@ export default function BookingFlow({ path }: { path: string }) {
         </select>
       </label>
       <p>Время показано в поясе {timeZone}</p>
-      {id ? (
+      {notice && !confirmed ? <p role="alert">{notice}</p> : null}
+      {confirmed ? (
+        <section aria-label="Подтверждение записи">
+          <h2>Запись подтверждена</h2>
+          <p>{confirmed.meetingTypeTitle}</p>
+          <p>
+            {dateLabel(localDate(confirmed.startsAt, timeZone))} ·{" "}
+            {timeLabel(confirmed.startsAt, timeZone)}–
+            {localDate(confirmed.startsAt, timeZone) !== localDate(confirmed.endsAt, timeZone)
+              ? `${dateLabel(localDate(confirmed.endsAt, timeZone))} `
+              : ""}
+            {timeLabel(confirmed.endsAt, timeZone)} · {timeZone}
+          </p>
+          <p>
+            {confirmed.name} · {confirmed.email}
+          </p>
+          <button
+            type="button"
+            className="page-link"
+            onClick={() => {
+              setConfirmed(null);
+              setNotice("");
+              setGuest({ name: "", email: "" });
+              navigate("/book");
+            }}
+          >
+            Записаться ещё
+          </button>
+        </section>
+      ) : activeId ? (
         <TimeStep
-          key={id}
-          id={id}
-          startsAt={new URLSearchParams(location.search).get("startsAt")}
+          key={activeId}
+          id={activeId}
+          startsAt={activeStart}
           timeZone={timeZone}
           navigate={navigate}
+          guest={guest}
+          setGuest={setGuest}
+          onSuccess={setConfirmed}
+          attempt={attempt}
+          setAttempt={setAttempt}
+          onUnavailable={(message) => {
+            setNotice(message);
+            navigate(`/book/${encodeURIComponent(activeId)}`);
+          }}
         />
       ) : (
         <Catalogue onSelect={(typeId) => navigate(`/book/${encodeURIComponent(typeId)}`)} />

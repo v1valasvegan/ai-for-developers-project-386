@@ -1,4 +1,5 @@
 mod availability;
+mod bookings;
 mod clock;
 mod meeting_types;
 mod request_validation;
@@ -12,11 +13,12 @@ use okoshko_api::{
     apis::{
         ErrorHandler,
         default::{
-            CreateMeetingTypeResponse, Default as ServiceApi, GetHealthResponse,
-            ListMeetingTypeSlotsResponse, ListMeetingTypesResponse,
+            CreateBookingResponse, CreateMeetingTypeResponse, Default as ServiceApi,
+            GetHealthResponse, ListBookingsResponse, ListMeetingTypeSlotsResponse,
+            ListMeetingTypesResponse,
         },
     },
-    models::{ApiError, CreateMeetingType, Health, ListMeetingTypeSlotsPathParams},
+    models::{ApiError, CreateBooking, CreateMeetingType, Health, ListMeetingTypeSlotsPathParams},
 };
 use std::{convert::Infallible, path::PathBuf, sync::Arc};
 
@@ -30,6 +32,67 @@ impl ErrorHandler<Infallible> for Api {}
 
 #[async_trait]
 impl ServiceApi<Infallible> for Api {
+    async fn create_booking(
+        &self,
+        _method: &Method,
+        _host: &Host,
+        _cookies: &CookieJar,
+        body: &CreateBooking,
+    ) -> Result<CreateBookingResponse, Infallible> {
+        let path = self.database_path.clone();
+        let input = body.clone();
+        let clock = self.clock.clone();
+        Ok(match tokio::task::spawn_blocking(move || bookings::create(&path, input, &clock)).await {
+            Ok(Ok((booking, false))) => CreateBookingResponse::Status201_TheRequestHasSucceededAndANewResourceHasBeenCreatedAsAResult(booking),
+            Ok(Ok((booking, true))) => CreateBookingResponse::Status200_TheRequestHasSucceeded(booking),
+            Ok(Err(bookings::CreateError::Rejected(400, error))) => CreateBookingResponse::Status400(error),
+            Ok(Err(bookings::CreateError::Rejected(404, error))) => CreateBookingResponse::Status404(error),
+            Ok(Err(bookings::CreateError::Rejected(409, error))) => CreateBookingResponse::Status409(error),
+            Ok(Err(bookings::CreateError::Storage(error))) if storage::is_unavailable(&error) => CreateBookingResponse::Status503(ApiError::new("storage_unavailable".into(), "Хранилище временно недоступно".into())),
+            Ok(Err(bookings::CreateError::Clock(error))) => {
+                eprintln!("Server clock failed: {error}");
+                CreateBookingResponse::Status500(ApiError::new("internal_error".into(), "Не удалось создать запись".into()))
+            }
+            error => {
+                eprintln!("Booking failed: {error:?}");
+                CreateBookingResponse::Status500(ApiError::new("internal_error".into(), "Не удалось создать запись".into()))
+            }
+        })
+    }
+
+    async fn list_bookings(
+        &self,
+        _method: &Method,
+        _host: &Host,
+        _cookies: &CookieJar,
+    ) -> Result<ListBookingsResponse, Infallible> {
+        let path = self.database_path.clone();
+        let now = self.clock.now();
+        Ok(
+            match tokio::task::spawn_blocking(move || {
+                now.map_err(|_| rusqlite::Error::InvalidQuery)
+                    .and_then(|now| bookings::list(&path, now))
+            })
+            .await
+            {
+                Ok(Ok(list)) => ListBookingsResponse::Status200_TheRequestHasSucceeded(list),
+                Ok(Err(error)) if storage::is_unavailable(&error) => {
+                    ListBookingsResponse::Status503(ApiError::new(
+                        "storage_unavailable".into(),
+                        "Хранилище временно недоступно".into(),
+                    ))
+                }
+                error => {
+                    eprintln!("Booking list failed: {error:?}");
+                    ListBookingsResponse::Status500(ApiError::new(
+                        "internal_error".into(),
+                        "Не удалось получить встречи".into(),
+                    ))
+                }
+            },
+        )
+    }
+
     async fn create_meeting_type(
         &self,
         _method: &Method,

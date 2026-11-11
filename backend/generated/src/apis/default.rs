@@ -12,6 +12,39 @@ use crate::{models, types::*};
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[must_use]
 #[allow(clippy::large_enum_variant)]
+pub enum CreateBookingResponse {
+    /// The request has succeeded.
+    Status200_TheRequestHasSucceeded
+    (models::Booking)
+    ,
+    /// The request has succeeded and a new resource has been created as a result.
+    Status201_TheRequestHasSucceededAndANewResourceHasBeenCreatedAsAResult
+    (models::Booking)
+    ,
+    /// Ошибки полей или некорректный запрос.
+    Status400
+    (models::ApiError)
+    ,
+    /// Указанный тип встречи не существует.
+    Status404
+    (models::ApiError)
+    ,
+    /// Пересечение либо другое содержимое успешного ключа.
+    Status409
+    (models::ApiError)
+    ,
+    /// Непредвиденная внутренняя ошибка.
+    Status500
+    (models::ApiError)
+    ,
+    /// Хранилище временно недоступно.
+    Status503
+    (models::ApiError)
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[must_use]
+#[allow(clippy::large_enum_variant)]
 pub enum CreateMeetingTypeResponse {
     /// The request has succeeded and a new resource has been created as a result.
     Status201_TheRequestHasSucceededAndANewResourceHasBeenCreatedAsAResult
@@ -41,6 +74,23 @@ pub enum GetHealthResponse {
     /// The request has succeeded.
     Status200_TheRequestHasSucceeded
     (models::Health)
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[must_use]
+#[allow(clippy::large_enum_variant)]
+pub enum ListBookingsResponse {
+    /// The request has succeeded.
+    Status200_TheRequestHasSucceeded
+    (models::BookingList)
+    ,
+    /// Непредвиденная внутренняя ошибка.
+    Status500
+    (models::ApiError)
+    ,
+    /// Хранилище временно недоступно.
+    Status503
+    (models::ApiError)
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -88,6 +138,16 @@ pub enum ListMeetingTypesResponse {
 #[async_trait]
 #[allow(clippy::ptr_arg)]
 pub trait Default<E: std::fmt::Debug + Send + Sync + 'static = ()>: super::ErrorHandler<E> {
+    /// CreateBooking - POST /api/bookings
+    async fn create_booking(
+    &self,
+    
+    method: &Method,
+    host: &Host,
+    cookies: &CookieJar,
+            body: &models::CreateBooking,
+    ) -> Result<CreateBookingResponse, E>;
+
     /// CreateMeetingType - POST /api/meeting-types
     async fn create_meeting_type(
     &self,
@@ -106,6 +166,15 @@ pub trait Default<E: std::fmt::Debug + Send + Sync + 'static = ()>: super::Error
     host: &Host,
     cookies: &CookieJar,
     ) -> Result<GetHealthResponse, E>;
+
+    /// ListBookings - GET /api/bookings
+    async fn list_bookings(
+    &self,
+    
+    method: &Method,
+    host: &Host,
+    cookies: &CookieJar,
+    ) -> Result<ListBookingsResponse, E>;
 
     /// ListMeetingTypeSlots - GET /api/meeting-types/{id}/slots
     async fn list_meeting_type_slots(

@@ -52,68 +52,84 @@ test("guest values survive Back and a real submit shows complete confirmation an
   });
 });
 
-test("field errors stay under their fields without erasing the other guest value", async () => {
-  await setup(async (_backend, guest) => {
-    render(<BookingFlow path="/book/intro-30" />);
-    await guest.type(await screen.findByLabelText("Имя"), "  ");
-    await guest.type(screen.getByLabelText("Email"), "Anna@Example.com");
-    await guest.click(screen.getByRole("button", { name: "Подтвердить запись" }));
-    expect(await screen.findByText("Укажите имя от 1 до 120 символов")).toBeVisible();
-    expect(screen.getByLabelText("Имя")).toHaveAccessibleDescription(
-      "Укажите имя от 1 до 120 символов",
-    );
-    expect(screen.getByLabelText("Email")).toHaveValue("Anna@Example.com");
-    await guest.type(screen.getByLabelText("Имя"), "Анна");
-    await guest.clear(screen.getByLabelText("Email"));
-    await guest.type(screen.getByLabelText("Email"), "bad");
-    await guest.click(screen.getByRole("button", { name: "Подтвердить запись" }));
-    expect(await screen.findByText("Укажите корректный email до 254 символов")).toBeVisible();
-    expect(screen.getByLabelText("Email")).toHaveAccessibleDescription(
-      "Укажите корректный email до 254 символов",
-    );
-    expect(screen.getByLabelText("Имя")).toHaveValue("  Анна");
-    await guest.clear(screen.getByLabelText("Email"));
-    await guest.type(screen.getByLabelText("Email"), "Anna@Example.com");
-    await guest.click(screen.getByRole("button", { name: "Подтвердить запись" }));
-    expect(await screen.findByRole("heading", { name: "Запись подтверждена" })).toBeVisible();
-  });
-});
-
-test("lost confirmation preserves an immutable in-memory attempt for retry with no duplicate", async () => {
-  await setup(async (backend, guest) => {
-    const requests = [];
-    const network = setupServer(
-      http.post(`${backend.url}/api/bookings`, async ({ request }) => {
-        requests.push(await request.clone().json());
-        const response = await fetch(bypass(request));
-        return requests.length === 1 ? HttpResponse.error() : response;
-      }),
-    );
-    network.listen({ onUnhandledRequest: "bypass" });
-    try {
+test.each(["2026-11-11T07:00:00Z", "2026-11-11T10:00:00+03:00"])(
+  "field errors stay under their fields without erasing the other guest value: %s",
+  async (startsAt) => {
+    await setup(async (_backend, guest) => {
+      window.history.replaceState(
+        null,
+        "",
+        `/book/intro-30?startsAt=${encodeURIComponent(startsAt)}`,
+      );
       render(<BookingFlow path="/book/intro-30" />);
-      await guest.type(await screen.findByLabelText("Имя"), "Анна");
+      await guest.type(await screen.findByLabelText("Имя"), "  ");
       await guest.type(screen.getByLabelText("Email"), "Anna@Example.com");
       await guest.click(screen.getByRole("button", { name: "Подтвердить запись" }));
-      expect(await screen.findByRole("alert")).toHaveTextContent(
-        "Не удалось получить подтверждение. Запись могла создаться. Повторите отправку",
+      expect(await screen.findByText("Укажите имя от 1 до 120 символов")).toBeVisible();
+      expect(screen.getByLabelText("Имя")).toHaveAccessibleDescription(
+        "Укажите имя от 1 до 120 символов",
       );
-      expect(screen.getByLabelText("Имя")).toBeDisabled();
-      expect(screen.getByRole("button", { name: "Назад" })).toBeDisabled();
-      await guest.selectOptions(screen.getByLabelText("Часовой пояс"), "UTC");
-      await guest.click(screen.getByRole("button", { name: "Повторить" }));
+      expect(screen.getByLabelText("Email")).toHaveValue("Anna@Example.com");
+      await guest.type(screen.getByLabelText("Имя"), "Анна");
+      await guest.clear(screen.getByLabelText("Email"));
+      await guest.type(screen.getByLabelText("Email"), "bad");
+      await guest.click(screen.getByRole("button", { name: "Подтвердить запись" }));
+      expect(await screen.findByText("Укажите корректный email до 254 символов")).toBeVisible();
+      expect(screen.getByLabelText("Email")).toHaveAccessibleDescription(
+        "Укажите корректный email до 254 символов",
+      );
+      expect(screen.getByLabelText("Имя")).toHaveValue("  Анна");
+      await guest.clear(screen.getByLabelText("Email"));
+      await guest.type(screen.getByLabelText("Email"), "Anna@Example.com");
+      await guest.click(screen.getByRole("button", { name: "Подтвердить запись" }));
       expect(await screen.findByRole("heading", { name: "Запись подтверждена" })).toBeVisible();
-      expect(requests).toHaveLength(2);
-      expect(requests[0].idempotencyKey).toMatch(/^[0-9a-f-]{36}$/);
-      expect(requests[1]).toEqual(requests[0]);
-      expect((await fetch(`${backend.url}/api/bookings`).then((r) => r.json())).items).toHaveLength(
-        1,
+    });
+  },
+);
+
+test.each(["2026-11-11T07:00:00Z", "2026-11-11T10:00:00+03:00"])(
+  "lost confirmation preserves an immutable in-memory attempt for retry with no duplicate: %s",
+  async (startsAt) => {
+    await setup(async (backend, guest) => {
+      window.history.replaceState(
+        null,
+        "",
+        `/book/intro-30?startsAt=${encodeURIComponent(startsAt)}`,
       );
-    } finally {
-      network.close();
-    }
-  });
-});
+      const requests = [];
+      const network = setupServer(
+        http.post(`${backend.url}/api/bookings`, async ({ request }) => {
+          requests.push(await request.clone().json());
+          const response = await fetch(bypass(request));
+          return requests.length === 1 ? HttpResponse.error() : response;
+        }),
+      );
+      network.listen({ onUnhandledRequest: "bypass" });
+      try {
+        render(<BookingFlow path="/book/intro-30" />);
+        await guest.type(await screen.findByLabelText("Имя"), "Анна");
+        await guest.type(screen.getByLabelText("Email"), "Anna@Example.com");
+        await guest.click(screen.getByRole("button", { name: "Подтвердить запись" }));
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+          "Не удалось получить подтверждение. Запись могла создаться. Повторите отправку",
+        );
+        expect(screen.getByLabelText("Имя")).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Назад" })).toBeDisabled();
+        await guest.selectOptions(screen.getByLabelText("Часовой пояс"), "UTC");
+        await guest.click(screen.getByRole("button", { name: "Повторить" }));
+        expect(await screen.findByRole("heading", { name: "Запись подтверждена" })).toBeVisible();
+        expect(requests).toHaveLength(2);
+        expect(requests[0].idempotencyKey).toMatch(/^[0-9a-f-]{36}$/);
+        expect(requests[1]).toEqual(requests[0]);
+        expect(
+          (await fetch(`${backend.url}/api/bookings`).then((r) => r.json())).items,
+        ).toHaveLength(1);
+      } finally {
+        network.close();
+      }
+    });
+  },
+);
 
 test.each(["conflict", "midnight"])(
   "%s refreshes slots, clears the start and keeps the type and guest",

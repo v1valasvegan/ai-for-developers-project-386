@@ -33,10 +33,12 @@ test.each(["/book", "/book/"])(
     const html = renderLanding(path);
     expect(html).toContain("Типы встреч");
     expect(html).toContain("Загружаем типы встреч");
-    expect(html).toContain("Выберите тип встречи, затем свободные день и время");
+    expect(html).toContain("Начните с типа встречи или свободного времени");
+    expect(html).toContain("Выбрать тип встречи");
+    expect(html).toContain("Выбрать дату и время");
     expect(html).not.toContain("Пока нет доступных типов встреч");
     expect(html).toMatch(/<a\b[^>]*href="\/"[^>]*>Вернуться на главную<\/a>/);
-    expect(html).not.toMatch(/<(form|input|button|table)\b/);
+    expect(html).not.toMatch(/<(form|input|table)\b/);
   },
 );
 

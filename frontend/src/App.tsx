@@ -189,7 +189,7 @@ function BookingCatalogue({ path }: { path: string }) {
           <div className="hero-copy">
             <p className="eyebrow">Страница записи</p>
             <h1 id="booking-title">Типы встреч</h1>
-            <p className="hero-description">Выберите тип встречи, затем свободные день и время.</p>
+            <p className="hero-description">Начните с типа встречи или свободного времени.</p>
             <BookingFlow path={path} />
             <div className="hero-actions">
               <a className="page-link" href="/">

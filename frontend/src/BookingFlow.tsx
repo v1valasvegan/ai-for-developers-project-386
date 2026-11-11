@@ -39,6 +39,10 @@ function parseStart(value: string | null) {
   // RFC 3339 requires an explicit offset, not the browser's implicit local timezone.
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/i.test(value))
     return NaN;
+  // Slots start on whole minutes. Reject nonzero fractions before Date.parse
+  // can truncate submillisecond precision into a different, available instant.
+  const fraction = value.match(/\.(\d+)/)?.[1];
+  if (fraction && /[1-9]/.test(fraction)) return NaN;
   const calendarDate = value.slice(0, 10);
   const midnight = new Date(`${calendarDate}T00:00:00Z`);
   if (

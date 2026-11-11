@@ -49,6 +49,35 @@ function mount(link = "/book") {
   );
 }
 
+test.each(["/book", "/book/intro-30"])(
+  "a submillisecond off-grid instant in %s is rejected instead of truncated to a free slot",
+  async (path) => {
+    await withBackend(async () => {
+      mount(`${path}?startsAt=2026-11-11T07:00:00.0001Z`);
+      expect(await screen.findByRole("alert")).toHaveTextContent("Ссылка неверна или устарела");
+      expect(screen.queryByLabelText("Имя", { exact: true })).not.toBeInTheDocument();
+      await userEvent.setup().click(screen.getByRole("button", { name: "Вернуться к выбору" }));
+      expect(await screen.findByRole("button", { name: "Выбрать Знакомство" })).toBeVisible();
+    });
+  },
+);
+
+test.each([
+  ["/book", "2026-11-11T07:00:00.0000000Z"],
+  ["/book/intro-30", "2026-11-11T10:00:00.0000+03:00"],
+])("an exact zero-fraction moment in %s remains selectable: %s", async (path, instant) => {
+  await withBackend(async () => {
+    mount(`${path}?startsAt=${encodeURIComponent(instant)}`);
+    if (path === "/book") {
+      await userEvent
+        .setup()
+        .click(await screen.findByRole("button", { name: "Выбрать Знакомство" }));
+    }
+    expect(await screen.findByLabelText("Имя", { exact: true })).toHaveValue("");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
 test("a start-only invalid link explains how to recover even with an empty catalogue", async () => {
   await withBackend(
     async () => {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Container } from "@mantine/core";
 import OwnerTypes from "./OwnerTypes";
 import { listBookings } from "./api/generated/sdk.gen";
@@ -11,39 +11,17 @@ export default function Owner() {
   const [pending, setPending] = useState(true);
   const request = useRef<AbortController | null>(null);
 
-  async function refresh() {
+  const refresh = useCallback(() => {
     if (request.current) return;
     const controller = new AbortController();
     request.current = controller;
-    try {
-      const { data } = await listBookings({ signal: controller.signal });
-      if (controller.signal.aborted) return;
-      if (data) {
-        setList(data);
-        setError(false);
-      } else setError(true);
-    } catch {
-      if (!controller.signal.aborted) setError(true);
-    } finally {
-      if (!controller.signal.aborted) setPending(false);
-      if (request.current === controller) request.current = null;
-    }
-  }
-
-  function manualRefresh() {
-    if (request.current) return;
-    setPending(true);
-    void refresh();
-  }
-
-  useEffect(() => {
-    const controller = new AbortController();
-    request.current = controller;
-    listBookings({ signal: controller.signal })
+    return listBookings({ signal: controller.signal })
       .then(({ data }) => {
         if (controller.signal.aborted) return;
-        if (data) setList(data);
-        else setError(true);
+        if (data) {
+          setList(data);
+          setError(false);
+        } else setError(true);
       })
       .catch(() => {
         if (!controller.signal.aborted) setError(true);
@@ -52,11 +30,21 @@ export default function Owner() {
         if (!controller.signal.aborted) setPending(false);
         if (request.current === controller) request.current = null;
       });
+  }, []);
+
+  function manualRefresh() {
+    if (request.current) return;
+    setPending(true);
+    void refresh();
+  }
+
+  useEffect(() => {
+    void refresh();
     return () => {
       request.current?.abort();
       request.current = null;
     };
-  }, []);
+  }, [refresh]);
 
   useEffect(() => {
     if (tab !== "meetings") return;
@@ -73,7 +61,7 @@ export default function Owner() {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", updatePolling);
     };
-  }, [tab]);
+  }, [tab, refresh]);
 
   function navigateTabs(event: React.KeyboardEvent<HTMLButtonElement>) {
     let next: string;

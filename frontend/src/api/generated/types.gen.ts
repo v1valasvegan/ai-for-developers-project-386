@@ -6,6 +6,20 @@ export type ClientOptions = {
 };
 
 /**
+ * Безопасное описание ошибки без внутренних технических подробностей.
+ */
+export type ApiError = {
+    /**
+     * Машиночитаемая причина ошибки.
+     */
+    code: string;
+    /**
+     * Сообщение для человека.
+     */
+    message: string;
+};
+
+/**
  * Состояние API сервиса.
  */
 export type Health = {
@@ -13,6 +27,38 @@ export type Health = {
      * Готовность сервера отвечать на запросы.
      */
     status: 'ok';
+};
+
+/**
+ * Тип встречи одного владельца календаря.
+ */
+export type MeetingType = {
+    /**
+     * Уникальный читаемый код типа встречи.
+     */
+    id: string;
+    /**
+     * Название простым текстом.
+     */
+    title: string;
+    /**
+     * Описание простым текстом, не HTML.
+     */
+    description: string;
+    /**
+     * Длительность в минутах, кратная 15.
+     */
+    durationMinutes: number;
+};
+
+/**
+ * Каталог, отсортированный по коду типа встречи.
+ */
+export type MeetingTypeList = {
+    /**
+     * Типы встреч; пустой каталог — нормальный результат.
+     */
+    items: Array<MeetingType>;
 };
 
 export type GetHealthData = {
@@ -30,3 +76,32 @@ export type GetHealthResponses = {
 };
 
 export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
+
+export type ListMeetingTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/meeting-types';
+};
+
+export type ListMeetingTypesErrors = {
+    /**
+     * Непредвиденная внутренняя ошибка.
+     */
+    500: ApiError;
+    /**
+     * Хранилище временно недоступно.
+     */
+    503: ApiError;
+};
+
+export type ListMeetingTypesError = ListMeetingTypesErrors[keyof ListMeetingTypesErrors];
+
+export type ListMeetingTypesResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: MeetingTypeList;
+};
+
+export type ListMeetingTypesResponse = ListMeetingTypesResponses[keyof ListMeetingTypesResponses];

@@ -6,7 +6,7 @@ info:
   description: API учебного сервиса записи на звонки «Окошко».
 tags:
   - name: Default
-    description: Проверка работоспособности сервиса
+    description: Работоспособность и каталог типов встреч
 paths:
   /api/health:
     get:
@@ -24,8 +24,51 @@ paths:
                 status: ok
       tags:
         - Default
+  /api/meeting-types:
+    get:
+      operationId: listMeetingTypes
+      description: Получить доступные типы встреч в порядке кода.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingTypeList'
+              example:
+                items: []
+        '500':
+          description: Непредвиденная внутренняя ошибка.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Хранилище временно недоступно.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Default
 components:
   schemas:
+    ApiError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Машиночитаемая причина ошибки.
+          example: storage_unavailable
+        message:
+          type: string
+          description: Сообщение для человека.
+          example: Хранилище временно недоступно. Повторите попытку
+      description: Безопасное описание ошибки без внутренних технических подробностей.
     Health:
       type: object
       required:
@@ -40,6 +83,57 @@ components:
       description: Состояние API сервиса.
       example:
         status: ok
+    MeetingType:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - durationMinutes
+      properties:
+        id:
+          type: string
+          minLength: 3
+          maxLength: 20
+          pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
+          description: Уникальный читаемый код типа встречи.
+          example: intro-30
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+          description: Название простым текстом.
+          example: Знакомство
+        description:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: Описание простым текстом, не HTML.
+          example: Обсудим ваш вопрос
+        durationMinutes:
+          type: integer
+          format: int32
+          minimum: 15
+          maximum: 480
+          description: Длительность в минутах, кратная 15.
+          example: 30
+      description: Тип встречи одного владельца календаря.
+    MeetingTypeList:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeetingType'
+          description: Типы встреч; пустой каталог — нормальный результат.
+          example:
+            - id: intro-30
+              title: Знакомство
+              description: Обсудим ваш вопрос
+              durationMinutes: 30
+      description: Каталог, отсортированный по коду типа встречи.
 servers:
   - url: http://localhost:3000
     description: Локальный сервер разработки

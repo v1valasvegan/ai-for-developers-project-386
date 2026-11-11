@@ -197,8 +197,52 @@ p {
 .page-link:hover {
   background: #963126;
 }
-.booking-placeholder {
-  padding-block: 96px;
+.booking-catalogue {
+  padding-block: clamp(32px, 6vw, 80px);
+}
+.booking-catalogue h1 {
+  font-size: clamp(32px, 6vw, 54px);
+  line-height: 1.15;
+  margin: 16px 0 24px;
+}
+.booking-catalogue .hero-copy {
+  max-width: 850px;
+}
+.booking-catalogue button {
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+.booking-catalogue button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}
+.catalogue-list {
+  display: grid;
+  gap: 16px;
+  padding: 0;
+  margin: 28px 0;
+  list-style: none;
+}
+.catalogue-list li {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: clamp(18px, 4vw, 28px);
+  overflow-wrap: anywhere;
+}
+.catalogue-list h2 {
+  font-size: 24px;
+  line-height: 1.3;
+  margin: 0 0 12px;
+}
+.catalogue-description {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  margin: 0;
+}
+.catalogue-duration {
+  color: var(--red);
+  margin: 16px 0 0;
 }
 .schedule-scene {
   margin: 32px 0 0;

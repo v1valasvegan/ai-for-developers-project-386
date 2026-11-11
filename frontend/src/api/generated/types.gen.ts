@@ -26,6 +26,80 @@ export type ApiError = {
 };
 
 /**
+ * Подтверждённая запись гостя.
+ */
+export type Booking = {
+    /**
+     * Серверный UUID записи.
+     */
+    id: string;
+    /**
+     * Код выбранного типа.
+     */
+    meetingTypeId: string;
+    /**
+     * Название типа на момент создания.
+     */
+    meetingTypeTitle: string;
+    /**
+     * Начало включительно, UTC.
+     */
+    startsAt: string;
+    /**
+     * Окончание исключительно, UTC.
+     */
+    endsAt: string;
+    /**
+     * Имя гостя простым текстом.
+     */
+    name: string;
+    /**
+     * Контакт гостя.
+     */
+    email: string;
+};
+
+/**
+ * Встречи всех типов по возрастанию начала.
+ */
+export type BookingList = {
+    /**
+     * Момент расчёта статусов.
+     */
+    serverTime: string;
+    /**
+     * Завершённые встречи исключены.
+     */
+    items: Array<OwnerBooking>;
+};
+
+/**
+ * Данные открытой попытки бронирования.
+ */
+export type CreateBooking = {
+    /**
+     * Код типа встречи.
+     */
+    meetingTypeId: string;
+    /**
+     * RFC 3339 с обязательным поясом; проверяется сервером.
+     */
+    startsAt: string;
+    /**
+     * Имя простым текстом, после удаления краевых пробелов 1–120 символов.
+     */
+    name: string;
+    /**
+     * Email после удаления краевых пробелов, до 254 символов.
+     */
+    email: string;
+    /**
+     * UUID попытки, не идентификатор записи.
+     */
+    idempotencyKey: string;
+};
+
+/**
  * Поля владельца до нормализации и проверки сервером.
  */
 export type CreateMeetingType = {
@@ -90,6 +164,16 @@ export type MeetingTypeList = {
 };
 
 /**
+ * Текущая или предстоящая встреча.
+ */
+export type OwnerBooking = Booking & {
+    /**
+     * Вычислен относительно serverTime.
+     */
+    status: 'upcoming' | 'ongoing';
+};
+
+/**
  * Свободный интервал выбранного типа встречи.
  */
 export type Slot = {
@@ -128,6 +212,83 @@ export type SlotList = {
      */
     items: Array<Slot>;
 };
+
+export type ListBookingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/bookings';
+};
+
+export type ListBookingsErrors = {
+    /**
+     * Непредвиденная внутренняя ошибка.
+     */
+    500: ApiError;
+    /**
+     * Хранилище временно недоступно.
+     */
+    503: ApiError;
+};
+
+export type ListBookingsError = ListBookingsErrors[keyof ListBookingsErrors];
+
+export type ListBookingsResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: BookingList;
+};
+
+export type ListBookingsResponse = ListBookingsResponses[keyof ListBookingsResponses];
+
+export type CreateBookingData = {
+    /**
+     * Поля гостя, выбранный старт и UUID открытой попытки.
+     */
+    body: CreateBooking;
+    path?: never;
+    query?: never;
+    url: '/api/bookings';
+};
+
+export type CreateBookingErrors = {
+    /**
+     * Ошибки полей или некорректный запрос.
+     */
+    400: ApiError;
+    /**
+     * Указанный тип встречи не существует.
+     */
+    404: ApiError;
+    /**
+     * Пересечение либо другое содержимое успешного ключа.
+     */
+    409: ApiError;
+    /**
+     * Непредвиденная внутренняя ошибка.
+     */
+    500: ApiError;
+    /**
+     * Хранилище временно недоступно.
+     */
+    503: ApiError;
+};
+
+export type CreateBookingError = CreateBookingErrors[keyof CreateBookingErrors];
+
+export type CreateBookingResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Booking;
+    /**
+     * The request has succeeded and a new resource has been created as a result.
+     */
+    201: Booking;
+};
+
+export type CreateBookingResponse = CreateBookingResponses[keyof CreateBookingResponses];
 
 export type GetHealthData = {
     body?: never;

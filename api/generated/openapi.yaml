@@ -8,6 +8,91 @@ tags:
   - name: Default
     description: Работоспособность и каталог типов встреч
 paths:
+  /api/bookings:
+    post:
+      operationId: createBooking
+      description: Атомарно создать запись или получить результат прежней попытки.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: Ошибки полей или некорректный запрос.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Указанный тип встречи не существует.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Пересечение либо другое содержимое успешного ключа.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Непредвиденная внутренняя ошибка.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Хранилище временно недоступно.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Default
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBooking'
+        description: Поля гостя, выбранный старт и UUID открытой попытки.
+    get:
+      operationId: listBookings
+      description: Получить текущие и предстоящие встречи владельца всех типов, отсортированные по началу.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingList'
+              example:
+                serverTime: '2026-11-10T12:00:00Z'
+                items: []
+        '500':
+          description: Непредвиденная внутренняя ошибка.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Хранилище временно недоступно.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Default
   /api/health:
     get:
       operationId: getHealth
@@ -169,6 +254,104 @@ components:
         message: Проверьте поля формы
         fieldErrors:
           id: Проверьте код типа встречи
+    Booking:
+      type: object
+      required:
+        - id
+        - meetingTypeId
+        - meetingTypeTitle
+        - startsAt
+        - endsAt
+        - name
+        - email
+      properties:
+        id:
+          type: string
+          description: Серверный UUID записи.
+        meetingTypeId:
+          type: string
+          description: Код выбранного типа.
+        meetingTypeTitle:
+          type: string
+          description: Название типа на момент создания.
+          x-plain-text: true
+        startsAt:
+          type: string
+          format: date-time
+          description: Начало включительно, UTC.
+        endsAt:
+          type: string
+          format: date-time
+          description: Окончание исключительно, UTC.
+        name:
+          type: string
+          description: Имя гостя простым текстом.
+          x-plain-text: true
+        email:
+          type: string
+          description: Контакт гостя.
+          x-plain-text: true
+      description: Подтверждённая запись гостя.
+      example:
+        id: d3cd41b7-1672-4363-a7f0-fb5292fdc976
+        meetingTypeId: intro-30
+        meetingTypeTitle: Знакомство
+        startsAt: '2026-11-11T07:00:00Z'
+        endsAt: '2026-11-11T07:30:00Z'
+        name: Анна
+        email: anna@example.com
+    BookingList:
+      type: object
+      required:
+        - serverTime
+        - items
+      properties:
+        serverTime:
+          type: string
+          format: date-time
+          description: Момент расчёта статусов.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OwnerBooking'
+          description: Завершённые встречи исключены.
+      description: Встречи всех типов по возрастанию начала.
+      example:
+        serverTime: '2026-11-10T12:00:00Z'
+        items: []
+    CreateBooking:
+      type: object
+      required:
+        - meetingTypeId
+        - startsAt
+        - name
+        - email
+        - idempotencyKey
+      properties:
+        meetingTypeId:
+          type: string
+          description: Код типа встречи.
+        startsAt:
+          type: string
+          description: RFC 3339 с обязательным поясом; проверяется сервером.
+        name:
+          type: string
+          description: Имя простым текстом, после удаления краевых пробелов 1–120 символов.
+          x-plain-text: true
+        email:
+          type: string
+          description: Email после удаления краевых пробелов, до 254 символов.
+          x-plain-text: true
+        idempotencyKey:
+          type: string
+          description: UUID попытки, не идентификатор записи.
+      description: Данные открытой попытки бронирования.
+      example:
+        meetingTypeId: intro-30
+        startsAt: '2026-11-11T07:00:00Z'
+        name: Анна
+        email: anna@example.com
+        idempotencyKey: 00000000-0000-4000-8000-000000000001
     CreateMeetingType:
       type: object
       required:
@@ -264,6 +447,29 @@ components:
               description: Обсудим ваш вопрос
               durationMinutes: 30
       description: Каталог, отсортированный по коду типа встречи.
+    OwnerBooking:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - upcoming
+            - ongoing
+          description: Вычислен относительно serverTime.
+      allOf:
+        - $ref: '#/components/schemas/Booking'
+      description: Текущая или предстоящая встреча.
+      example:
+        id: d3cd41b7-1672-4363-a7f0-fb5292fdc976
+        meetingTypeId: intro-30
+        meetingTypeTitle: Знакомство
+        startsAt: '2026-11-11T07:00:00Z'
+        endsAt: '2026-11-11T07:30:00Z'
+        name: Анна
+        email: anna@example.com
+        status: upcoming
     Slot:
       type: object
       required:

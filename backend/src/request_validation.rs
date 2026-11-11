@@ -6,7 +6,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use http::{Method, StatusCode};
-use okoshko_api::models::{ApiError, CreateMeetingType};
+use okoshko_api::models::{ApiError, CreateBooking, CreateMeetingType};
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -14,7 +14,10 @@ use std::collections::HashMap;
 // or mistyped fields. Keep transport failures in the same public error envelope as
 // business validation; the generated DTO and handler still process valid requests.
 pub async fn meeting_type_json(request: Request, next: Next) -> Response {
-    if request.method() != Method::POST || request.uri().path() != "/api/meeting-types" {
+    let booking = request.uri().path() == "/api/bookings";
+    if request.method() != Method::POST
+        || (!booking && request.uri().path() != "/api/meeting-types")
+    {
         return next.run(request).await;
     }
     let (parts, body) = request.into_parts();
@@ -25,6 +28,40 @@ pub async fn meeting_type_json(request: Request, next: Next) -> Response {
         };
     if !value.is_object() {
         return invalid(None);
+    }
+    if booking {
+        let required = [
+            "meetingTypeId",
+            "startsAt",
+            "name",
+            "email",
+            "idempotencyKey",
+        ];
+        let mut fields = HashMap::new();
+        for field in required {
+            if !value.get(field).is_some_and(Value::is_string) {
+                fields.insert(field.to_owned(), "Обязательное текстовое поле".to_owned());
+            }
+        }
+        if !fields.is_empty() {
+            return invalid(Some(fields));
+        }
+        if value
+            .as_object()
+            .is_some_and(|object| object.keys().any(|key| !required.contains(&key.as_str())))
+        {
+            return invalid(None);
+        }
+        let input: CreateBooking = match serde_json::from_value(value.clone()) {
+            Ok(input) => input,
+            Err(_) => return invalid(None),
+        };
+        if let Err(error) = crate::bookings::validate(&input) {
+            return (StatusCode::BAD_REQUEST, Json(error)).into_response();
+        }
+        return next
+            .run(Request::from_parts(parts, Body::from(value.to_string())))
+            .await;
     }
     let mut fields = HashMap::new();
     for field in ["id", "title", "description"] {

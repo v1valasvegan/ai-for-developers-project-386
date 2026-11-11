@@ -73,6 +73,8 @@ pub fn check_xss_map<T>(v: &std::collections::HashMap<String, T>) -> std::result
 
 
 
+
+
     #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
     #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
     pub struct ListMeetingTypeSlotsPathParams {
@@ -219,6 +221,497 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<ApiError> {
                     match <ApiError as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
                         std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into ApiError - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Подтверждённая запись гостя.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct Booking {
+    /// Серверный UUID записи.
+    #[serde(rename = "id")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub id: String,
+
+    /// Код выбранного типа.
+    #[serde(rename = "meetingTypeId")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub meeting_type_id: String,
+
+    /// Название типа на момент создания.
+    #[serde(rename = "meetingTypeTitle")]
+    pub meeting_type_title: String,
+
+    /// Начало включительно, UTC.
+    #[serde(rename = "startsAt")]
+    pub starts_at: chrono::DateTime::<chrono::Utc>,
+
+    /// Окончание исключительно, UTC.
+    #[serde(rename = "endsAt")]
+    pub ends_at: chrono::DateTime::<chrono::Utc>,
+
+    /// Имя гостя простым текстом.
+    #[serde(rename = "name")]
+    pub name: String,
+
+    /// Контакт гостя.
+    #[serde(rename = "email")]
+    pub email: String,
+
+}
+
+
+
+impl Booking {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(id: String, meeting_type_id: String, meeting_type_title: String, starts_at: chrono::DateTime::<chrono::Utc>, ends_at: chrono::DateTime::<chrono::Utc>, name: String, email: String, ) -> Booking {
+        Booking {
+ id,
+ meeting_type_id,
+ meeting_type_title,
+ starts_at,
+ ends_at,
+ name,
+ email,
+        }
+    }
+}
+
+/// Converts the Booking value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for Booking {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("id".to_string()),
+            Some(self.id.to_string()),
+
+
+            Some("meetingTypeId".to_string()),
+            Some(self.meeting_type_id.to_string()),
+
+
+            Some("meetingTypeTitle".to_string()),
+            Some(self.meeting_type_title.to_string()),
+
+            // Skipping startsAt in query parameter serialization
+
+            // Skipping endsAt in query parameter serialization
+
+
+            Some("name".to_string()),
+            Some(self.name.to_string()),
+
+
+            Some("email".to_string()),
+            Some(self.email.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a Booking value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for Booking {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub id: Vec<String>,
+            pub meeting_type_id: Vec<String>,
+            pub meeting_type_title: Vec<String>,
+            pub starts_at: Vec<chrono::DateTime::<chrono::Utc>>,
+            pub ends_at: Vec<chrono::DateTime::<chrono::Utc>>,
+            pub name: Vec<String>,
+            pub email: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing Booking".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "id" => intermediate_rep.id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "meetingTypeId" => intermediate_rep.meeting_type_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "meetingTypeTitle" => intermediate_rep.meeting_type_title.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "startsAt" => intermediate_rep.starts_at.push(<chrono::DateTime::<chrono::Utc> as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "endsAt" => intermediate_rep.ends_at.push(<chrono::DateTime::<chrono::Utc> as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "name" => intermediate_rep.name.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "email" => intermediate_rep.email.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing Booking".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(Booking {
+            id: intermediate_rep.id.into_iter().next().ok_or_else(|| "id missing in Booking".to_string())?,
+            meeting_type_id: intermediate_rep.meeting_type_id.into_iter().next().ok_or_else(|| "meetingTypeId missing in Booking".to_string())?,
+            meeting_type_title: intermediate_rep.meeting_type_title.into_iter().next().ok_or_else(|| "meetingTypeTitle missing in Booking".to_string())?,
+            starts_at: intermediate_rep.starts_at.into_iter().next().ok_or_else(|| "startsAt missing in Booking".to_string())?,
+            ends_at: intermediate_rep.ends_at.into_iter().next().ok_or_else(|| "endsAt missing in Booking".to_string())?,
+            name: intermediate_rep.name.into_iter().next().ok_or_else(|| "name missing in Booking".to_string())?,
+            email: intermediate_rep.email.into_iter().next().ok_or_else(|| "email missing in Booking".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<Booking> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<Booking>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<Booking>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for Booking - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<Booking> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <Booking as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into Booking - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Встречи всех типов по возрастанию начала.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct BookingList {
+    /// Момент расчёта статусов.
+    #[serde(rename = "serverTime")]
+    pub server_time: chrono::DateTime::<chrono::Utc>,
+
+    /// Завершённые встречи исключены.
+    #[serde(rename = "items")]
+          #[validate(nested)]
+    pub items: Vec<models::OwnerBooking>,
+
+}
+
+
+
+impl BookingList {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(server_time: chrono::DateTime::<chrono::Utc>, items: Vec<models::OwnerBooking>, ) -> BookingList {
+        BookingList {
+ server_time,
+ items,
+        }
+    }
+}
+
+/// Converts the BookingList value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for BookingList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+            // Skipping serverTime in query parameter serialization
+
+            // Skipping items in query parameter serialization
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a BookingList value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for BookingList {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub server_time: Vec<chrono::DateTime::<chrono::Utc>>,
+            pub items: Vec<Vec<models::OwnerBooking>>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing BookingList".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "serverTime" => intermediate_rep.server_time.push(<chrono::DateTime::<chrono::Utc> as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    "items" => return std::result::Result::Err("Parsing a container in this style is not supported in BookingList".to_string()),
+                    _ => return std::result::Result::Err("Unexpected key while parsing BookingList".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(BookingList {
+            server_time: intermediate_rep.server_time.into_iter().next().ok_or_else(|| "serverTime missing in BookingList".to_string())?,
+            items: intermediate_rep.items.into_iter().next().ok_or_else(|| "items missing in BookingList".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<BookingList> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<BookingList>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<BookingList>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for BookingList - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<BookingList> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <BookingList as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into BookingList - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+/// Данные открытой попытки бронирования.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct CreateBooking {
+    /// Код типа встречи.
+    #[serde(rename = "meetingTypeId")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub meeting_type_id: String,
+
+    /// RFC 3339 с обязательным поясом; проверяется сервером.
+    #[serde(rename = "startsAt")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub starts_at: String,
+
+    /// Имя простым текстом, после удаления краевых пробелов 1–120 символов.
+    #[serde(rename = "name")]
+    pub name: String,
+
+    /// Email после удаления краевых пробелов, до 254 символов.
+    #[serde(rename = "email")]
+    pub email: String,
+
+    /// UUID попытки, не идентификатор записи.
+    #[serde(rename = "idempotencyKey")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub idempotency_key: String,
+
+}
+
+
+
+impl CreateBooking {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(meeting_type_id: String, starts_at: String, name: String, email: String, idempotency_key: String, ) -> CreateBooking {
+        CreateBooking {
+ meeting_type_id,
+ starts_at,
+ name,
+ email,
+ idempotency_key,
+        }
+    }
+}
+
+/// Converts the CreateBooking value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for CreateBooking {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("meetingTypeId".to_string()),
+            Some(self.meeting_type_id.to_string()),
+
+
+            Some("startsAt".to_string()),
+            Some(self.starts_at.to_string()),
+
+
+            Some("name".to_string()),
+            Some(self.name.to_string()),
+
+
+            Some("email".to_string()),
+            Some(self.email.to_string()),
+
+
+            Some("idempotencyKey".to_string()),
+            Some(self.idempotency_key.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a CreateBooking value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for CreateBooking {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub meeting_type_id: Vec<String>,
+            pub starts_at: Vec<String>,
+            pub name: Vec<String>,
+            pub email: Vec<String>,
+            pub idempotency_key: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing CreateBooking".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "meetingTypeId" => intermediate_rep.meeting_type_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "startsAt" => intermediate_rep.starts_at.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "name" => intermediate_rep.name.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "email" => intermediate_rep.email.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "idempotencyKey" => intermediate_rep.idempotency_key.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing CreateBooking".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(CreateBooking {
+            meeting_type_id: intermediate_rep.meeting_type_id.into_iter().next().ok_or_else(|| "meetingTypeId missing in CreateBooking".to_string())?,
+            starts_at: intermediate_rep.starts_at.into_iter().next().ok_or_else(|| "startsAt missing in CreateBooking".to_string())?,
+            name: intermediate_rep.name.into_iter().next().ok_or_else(|| "name missing in CreateBooking".to_string())?,
+            email: intermediate_rep.email.into_iter().next().ok_or_else(|| "email missing in CreateBooking".to_string())?,
+            idempotency_key: intermediate_rep.idempotency_key.into_iter().next().ok_or_else(|| "idempotencyKey missing in CreateBooking".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<CreateBooking> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<CreateBooking>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<CreateBooking>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for CreateBooking - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<CreateBooking> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <CreateBooking as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into CreateBooking - {err}"#))
                     }
              },
              std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
@@ -783,6 +1276,213 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MeetingTypeL
                     match <MeetingTypeList as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
                         std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into MeetingTypeList - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct OwnerBooking {
+    /// Серверный UUID записи.
+    #[serde(rename = "id")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub id: String,
+
+    /// Код выбранного типа.
+    #[serde(rename = "meetingTypeId")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub meeting_type_id: String,
+
+    /// Название типа на момент создания.
+    #[serde(rename = "meetingTypeTitle")]
+    pub meeting_type_title: String,
+
+    /// Начало включительно, UTC.
+    #[serde(rename = "startsAt")]
+    pub starts_at: chrono::DateTime::<chrono::Utc>,
+
+    /// Окончание исключительно, UTC.
+    #[serde(rename = "endsAt")]
+    pub ends_at: chrono::DateTime::<chrono::Utc>,
+
+    /// Имя гостя простым текстом.
+    #[serde(rename = "name")]
+    pub name: String,
+
+    /// Контакт гостя.
+    #[serde(rename = "email")]
+    pub email: String,
+
+    /// Вычислен относительно serverTime.
+    /// Note: inline enums are not fully supported by openapi-generator
+    #[serde(rename = "status")]
+          #[validate(custom(function = "check_xss_string"))]
+    pub status: String,
+
+}
+
+
+
+impl OwnerBooking {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(id: String, meeting_type_id: String, meeting_type_title: String, starts_at: chrono::DateTime::<chrono::Utc>, ends_at: chrono::DateTime::<chrono::Utc>, name: String, email: String, status: String, ) -> OwnerBooking {
+        OwnerBooking {
+ id,
+ meeting_type_id,
+ meeting_type_title,
+ starts_at,
+ ends_at,
+ name,
+ email,
+ status,
+        }
+    }
+}
+
+/// Converts the OwnerBooking value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for OwnerBooking {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+
+            Some("id".to_string()),
+            Some(self.id.to_string()),
+
+
+            Some("meetingTypeId".to_string()),
+            Some(self.meeting_type_id.to_string()),
+
+
+            Some("meetingTypeTitle".to_string()),
+            Some(self.meeting_type_title.to_string()),
+
+            // Skipping startsAt in query parameter serialization
+
+            // Skipping endsAt in query parameter serialization
+
+
+            Some("name".to_string()),
+            Some(self.name.to_string()),
+
+
+            Some("email".to_string()),
+            Some(self.email.to_string()),
+
+
+            Some("status".to_string()),
+            Some(self.status.to_string()),
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a OwnerBooking value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for OwnerBooking {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub id: Vec<String>,
+            pub meeting_type_id: Vec<String>,
+            pub meeting_type_title: Vec<String>,
+            pub starts_at: Vec<chrono::DateTime::<chrono::Utc>>,
+            pub ends_at: Vec<chrono::DateTime::<chrono::Utc>>,
+            pub name: Vec<String>,
+            pub email: Vec<String>,
+            pub status: Vec<String>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing OwnerBooking".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "id" => intermediate_rep.id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "meetingTypeId" => intermediate_rep.meeting_type_id.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "meetingTypeTitle" => intermediate_rep.meeting_type_title.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "startsAt" => intermediate_rep.starts_at.push(<chrono::DateTime::<chrono::Utc> as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "endsAt" => intermediate_rep.ends_at.push(<chrono::DateTime::<chrono::Utc> as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "name" => intermediate_rep.name.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "email" => intermediate_rep.email.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "status" => intermediate_rep.status.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing OwnerBooking".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(OwnerBooking {
+            id: intermediate_rep.id.into_iter().next().ok_or_else(|| "id missing in OwnerBooking".to_string())?,
+            meeting_type_id: intermediate_rep.meeting_type_id.into_iter().next().ok_or_else(|| "meetingTypeId missing in OwnerBooking".to_string())?,
+            meeting_type_title: intermediate_rep.meeting_type_title.into_iter().next().ok_or_else(|| "meetingTypeTitle missing in OwnerBooking".to_string())?,
+            starts_at: intermediate_rep.starts_at.into_iter().next().ok_or_else(|| "startsAt missing in OwnerBooking".to_string())?,
+            ends_at: intermediate_rep.ends_at.into_iter().next().ok_or_else(|| "endsAt missing in OwnerBooking".to_string())?,
+            name: intermediate_rep.name.into_iter().next().ok_or_else(|| "name missing in OwnerBooking".to_string())?,
+            email: intermediate_rep.email.into_iter().next().ok_or_else(|| "email missing in OwnerBooking".to_string())?,
+            status: intermediate_rep.status.into_iter().next().ok_or_else(|| "status missing in OwnerBooking".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<OwnerBooking> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<OwnerBooking>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<OwnerBooking>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for OwnerBooking - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<OwnerBooking> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <OwnerBooking as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into OwnerBooking - {err}"#))
                     }
              },
              std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))

@@ -220,6 +220,39 @@ p {
 .booking-flow {
   overflow-wrap: anywhere;
 }
+.booking-guest-form {
+  display: grid;
+  gap: 16px;
+  max-width: 540px;
+  margin-block: 24px;
+  text-align: left;
+}
+.booking-guest-form label {
+  display: grid;
+  gap: 8px;
+}
+.booking-guest-form input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fffdf9;
+  color: var(--ink);
+  font: inherit;
+}
+.booking-guest-form input:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.booking-guest-form input[aria-invalid="true"] {
+  border-color: var(--red);
+}
+.booking-flow button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
 .booking-zone {
   display: flex;
   flex-wrap: wrap;

@@ -183,3 +183,89 @@ op listMeetingTypeSlots(
   /** Код типа встречи. */
   @path id: string,
 ): SlotList | MeetingTypeNotFound | StorageUnavailable | InternalError;
+
+/** Данные открытой попытки бронирования. */
+@example(#{ meetingTypeId: "intro-30", startsAt: "2026-11-11T07:00:00Z", name: "Анна", email: "anna@example.com", idempotencyKey: "00000000-0000-4000-8000-000000000001" })
+model CreateBooking {
+  /** Код типа встречи. */
+  meetingTypeId: string;
+  /** RFC 3339 с обязательным поясом; проверяется сервером. */
+  startsAt: string;
+  /** Имя простым текстом, после удаления краевых пробелов 1–120 символов. */
+  @extension("x-plain-text", true)
+  name: string;
+  /** Email после удаления краевых пробелов, до 254 символов. */
+  @extension("x-plain-text", true)
+  email: string;
+  /** UUID попытки, не идентификатор записи. */
+  idempotencyKey: string;
+}
+
+/** Подтверждённая запись гостя. */
+@example(#{ id: "d3cd41b7-1672-4363-a7f0-fb5292fdc976", meetingTypeId: "intro-30", meetingTypeTitle: "Знакомство", startsAt: utcDateTime.fromISO("2026-11-11T07:00:00Z"), endsAt: utcDateTime.fromISO("2026-11-11T07:30:00Z"), name: "Анна", email: "anna@example.com" })
+model Booking {
+  /** Серверный UUID записи. */
+  id: string;
+  /** Код выбранного типа. */
+  meetingTypeId: string;
+  /** Название типа на момент создания. */
+  @extension("x-plain-text", true)
+  meetingTypeTitle: string;
+  /** Начало включительно, UTC. */
+  startsAt: utcDateTime;
+  /** Окончание исключительно, UTC. */
+  endsAt: utcDateTime;
+  /** Имя гостя простым текстом. */
+  @extension("x-plain-text", true)
+  name: string;
+  /** Контакт гостя. */
+  @extension("x-plain-text", true)
+  email: string;
+}
+
+/** Текущая или предстоящая встреча. */
+@example(#{ id: "d3cd41b7-1672-4363-a7f0-fb5292fdc976", meetingTypeId: "intro-30", meetingTypeTitle: "Знакомство", startsAt: utcDateTime.fromISO("2026-11-11T07:00:00Z"), endsAt: utcDateTime.fromISO("2026-11-11T07:30:00Z"), name: "Анна", email: "anna@example.com", status: "upcoming" })
+model OwnerBooking extends Booking {
+  /** Вычислен относительно serverTime. */
+  status: "upcoming" | "ongoing";
+}
+
+/** Встречи всех типов по возрастанию начала. */
+@example(#{ serverTime: utcDateTime.fromISO("2026-11-10T12:00:00Z"), items: #[] })
+model BookingList {
+  /** Момент расчёта статусов. */
+  serverTime: utcDateTime;
+  /** Завершённые встречи исключены. */
+  items: OwnerBooking[];
+}
+
+/** Пересечение либо другое содержимое успешного ключа. */
+@error
+model BookingConflict {
+  @statusCode statusCode: 409;
+  @body body: ApiError;
+}
+
+/** Атомарно создать запись или получить результат прежней попытки. */
+@tag("Default")
+@operationId("createBooking")
+@post
+@route("/api/bookings")
+op createBooking(
+  /** Поля гостя, выбранный старт и UUID открытой попытки. */
+  @body body: CreateBooking
+): {
+  @statusCode statusCode: 201;
+  @body body: Booking;
+} | {
+  @statusCode statusCode: 200;
+  @body body: Booking;
+} | ValidationError | MeetingTypeNotFound | BookingConflict | StorageUnavailable | InternalError;
+
+/** Получить текущие и предстоящие встречи владельца всех типов, отсортированные по началу. */
+@tag("Default")
+@opExample(#{ returnType: #{ serverTime: utcDateTime.fromISO("2026-11-10T12:00:00Z"), items: #[] } })
+@operationId("listBookings")
+@get
+@route("/api/bookings")
+op listBookings(): BookingList | StorageUnavailable | InternalError;

@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 
+#[derive(Clone)]
 pub enum Clock {
     System,
     // Internal test harness input. Release builds only have the real server clock.

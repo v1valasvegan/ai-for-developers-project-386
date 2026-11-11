@@ -8,7 +8,7 @@ for (const root of roots) await rm(root, { recursive: true, force: true });
 execSync("tsp compile api", { stdio: "inherit" });
 execSync("openapi-ts", { stdio: "inherit" });
 execSync(
-  "node scripts/generate-rust.mjs generate -g rust-axum -i api/generated/openapi.yaml -o backend/generated --additional-properties=packageName=okoshko_api,packageVersion=0.1.0,disableValidator=false,licenseInfo=MIT,hideGenerationTimestamp=true --global-property=apiTests=false,modelTests=false,apiDocs=false,modelDocs=false",
+  "node scripts/generate-rust.mjs generate -g rust-axum -t api/templates/rust-axum -i api/generated/openapi.yaml -o backend/generated --additional-properties=packageName=okoshko_api,packageVersion=0.1.0,disableValidator=false,licenseInfo=MIT,hideGenerationTimestamp=true --global-property=apiTests=false,modelTests=false,apiDocs=false,modelDocs=false",
   { stdio: "inherit" },
 );
 

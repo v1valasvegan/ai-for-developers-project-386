@@ -1,6 +1,7 @@
 import { Container } from "@mantine/core";
 import "./App.css";
 import Catalogue from "./Catalogue";
+import OwnerTypes from "./OwnerTypes";
 
 const steps = [
   {
@@ -176,6 +177,9 @@ function BookingCatalogue() {
               окошко<span className="wordmark-dot">.</span>
             </span>
           </a>
+          <nav className="header-nav" aria-label="Основная навигация">
+            <a href="/owner">Управление</a>
+          </nav>
           <span className="development-status">
             <span />
             Скоро откроемся
@@ -203,6 +207,7 @@ function BookingCatalogue() {
 
 export default function App({ path = "/" }: { path?: string }) {
   if (path === "/book" || path === "/book/") return <BookingCatalogue />;
+  if (path === "/owner" || path === "/owner/") return <OwnerTypes />;
   return (
     <div className="landing">
       <a className="skip-link" href="#main">
@@ -218,6 +223,7 @@ export default function App({ path = "/" }: { path?: string }) {
           </a>
           <nav className="header-nav" aria-label="Основная навигация">
             <a href="#how-it-works">Как это работает</a>
+            <a href="/owner">Управление</a>
           </nav>
           <span className="development-status">
             <span />

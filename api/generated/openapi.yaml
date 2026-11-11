@@ -52,6 +52,50 @@ paths:
                 $ref: '#/components/schemas/ApiError'
       tags:
         - Default
+    post:
+      operationId: createMeetingType
+      description: Создать тип встречи с уникальным нормализованным кодом.
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingType'
+        '400':
+          description: Ошибки полей или некорректный запрос.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Нормализованный код уже используется.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Непредвиденная внутренняя ошибка.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Хранилище временно недоступно.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Default
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMeetingType'
+        description: Поля нового типа встречи до серверной нормализации.
 components:
   schemas:
     ApiError:
@@ -68,7 +112,47 @@ components:
           type: string
           description: Сообщение для человека.
           example: Хранилище временно недоступно. Повторите попытку
+        fieldErrors:
+          type: object
+          additionalProperties:
+            type: string
+          description: Сообщения только для ошибочных полей запроса.
+          example:
+            id: Этот код уже используется. Выберите другой
       description: Безопасное описание ошибки без внутренних технических подробностей.
+      example:
+        code: validation_error
+        message: Проверьте поля формы
+        fieldErrors:
+          id: Проверьте код типа встречи
+    CreateMeetingType:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - durationMinutes
+      properties:
+        id:
+          type: string
+          description: 'Код: после нормализации 3–20 латинских букв, цифр и дефисов.'
+          example: Intro------30
+        title:
+          type: string
+          description: 'Название: после удаления пробелов по краям 1–120 символов.'
+          example: Знакомство
+          x-plain-text: true
+        description:
+          type: string
+          description: 'Описание простым текстом: после удаления пробелов по краям 1–2000 символов.'
+          example: Обсудим ваш вопрос
+          x-plain-text: true
+        durationMinutes:
+          type: integer
+          format: int32
+          description: Целое число 15–480 включительно, кратное 15.
+          example: 30
+      description: Поля владельца до нормализации и проверки сервером.
     Health:
       type: object
       required:
@@ -104,12 +188,14 @@ components:
           maxLength: 120
           description: Название простым текстом.
           example: Знакомство
+          x-plain-text: true
         description:
           type: string
           minLength: 1
           maxLength: 2000
           description: Описание простым текстом, не HTML.
           example: Обсудим ваш вопрос
+          x-plain-text: true
         durationMinutes:
           type: integer
           format: int32

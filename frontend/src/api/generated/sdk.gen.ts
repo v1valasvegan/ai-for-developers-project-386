@@ -3,7 +3,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetHealthData, GetHealthResponses, ListMeetingTypesData, ListMeetingTypesErrors, ListMeetingTypesResponses } from './types.gen';
+import type { CreateMeetingTypeData, CreateMeetingTypeErrors, CreateMeetingTypeResponses, GetHealthData, GetHealthResponses, ListMeetingTypesData, ListMeetingTypesErrors, ListMeetingTypesResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -28,3 +28,15 @@ export const getHealth = <ThrowOnError extends boolean = false>(options?: Option
  * Получить доступные типы встреч в порядке кода.
  */
 export const listMeetingTypes = <ThrowOnError extends boolean = false>(options?: Options<ListMeetingTypesData, ThrowOnError>): RequestResult<ListMeetingTypesResponses, ListMeetingTypesErrors, ThrowOnError> => (options?.client ?? client).get<ListMeetingTypesResponses, ListMeetingTypesErrors, ThrowOnError>({ url: '/api/meeting-types', ...options });
+
+/**
+ * Создать тип встречи с уникальным нормализованным кодом.
+ */
+export const createMeetingType = <ThrowOnError extends boolean = false>(options: Options<CreateMeetingTypeData, ThrowOnError>): RequestResult<CreateMeetingTypeResponses, CreateMeetingTypeErrors, ThrowOnError> => (options.client ?? client).post<CreateMeetingTypeResponses, CreateMeetingTypeErrors, ThrowOnError>({
+    url: '/api/meeting-types',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});

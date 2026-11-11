@@ -36,9 +36,184 @@ where
             get(get_health::<I, A, E>)
         )
         .route("/api/meeting-types",
-            get(list_meeting_types::<I, A, E>)
+            get(list_meeting_types::<I, A, E>).post(create_meeting_type::<I, A, E>)
         )
         .with_state(api_impl)
+}
+
+    #[derive(validator::Validate)]
+    #[allow(dead_code)]
+    struct CreateMeetingTypeBodyValidator<'a> {
+          #[validate(nested)]
+          body: &'a models::CreateMeetingType,
+    }
+
+
+#[tracing::instrument(skip_all)]
+fn create_meeting_type_validation(
+        body: models::CreateMeetingType,
+) -> std::result::Result<(
+        models::CreateMeetingType,
+), ValidationErrors>
+{
+              let b = CreateMeetingTypeBodyValidator { body: &body };
+              b.validate()?;
+
+Ok((
+    body,
+))
+}
+/// CreateMeetingType - POST /api/meeting-types
+#[tracing::instrument(skip_all)]
+async fn create_meeting_type<I, A, E>(
+  method: Method,
+  TypedHeader(host): TypedHeader<Host>,
+  cookies: CookieJar,
+ State(api_impl): State<I>,
+          Json(body): Json<models::CreateMeetingType>,
+) -> Result<Response, StatusCode>
+where
+    I: AsRef<A> + Send + Sync,
+    A: apis::default::Default<E> + Send + Sync,
+    E: std::fmt::Debug + Send + Sync + 'static,
+        {
+
+
+
+
+      #[allow(clippy::redundant_closure)]
+      let validation = tokio::task::spawn_blocking(move ||
+    create_meeting_type_validation(
+          body,
+    )
+  ).await.unwrap();
+
+  let Ok((
+      body,
+  )) = validation else {
+    return Response::builder()
+            .status(StatusCode::BAD_REQUEST)
+            .body(Body::from(validation.unwrap_err().to_string()))
+            .map_err(|_| StatusCode::BAD_REQUEST);
+  };
+
+
+
+  let result = api_impl.as_ref().create_meeting_type(
+      
+      &method,
+      &host,
+      &cookies,
+              &body,
+  ).await;
+
+  let resp = match result {
+                                            Ok(rsp) => match rsp {
+                                                apis::default::CreateMeetingTypeResponse::Status201_TheRequestHasSucceededAndANewResourceHasBeenCreatedAsAResult
+                                                    (body)
+                                                => {
+                                                let mut response = Response::builder();
+                                                  let mut response = response.status(201);
+                                                  {
+                                                    let mut response_headers = response.headers_mut().unwrap();
+                                                    response_headers.insert(
+                                                        CONTENT_TYPE,
+                                                        HeaderValue::from_static("application/json"));
+                                                  }
+
+                                                  let body_content =  tokio::task::spawn_blocking(move ||
+                                                      serde_json::to_vec(&body).map_err(|e| {
+                                                        error!(error = ?e);
+                                                        StatusCode::INTERNAL_SERVER_ERROR
+                                                      })).await.unwrap()?;
+                                                  response.body(Body::from(body_content))
+                                                },
+                                                apis::default::CreateMeetingTypeResponse::Status400
+                                                    (body)
+                                                => {
+                                                let mut response = Response::builder();
+                                                  let mut response = response.status(400);
+                                                  {
+                                                    let mut response_headers = response.headers_mut().unwrap();
+                                                    response_headers.insert(
+                                                        CONTENT_TYPE,
+                                                        HeaderValue::from_static("application/json"));
+                                                  }
+
+                                                  let body_content =  tokio::task::spawn_blocking(move ||
+                                                      serde_json::to_vec(&body).map_err(|e| {
+                                                        error!(error = ?e);
+                                                        StatusCode::INTERNAL_SERVER_ERROR
+                                                      })).await.unwrap()?;
+                                                  response.body(Body::from(body_content))
+                                                },
+                                                apis::default::CreateMeetingTypeResponse::Status409
+                                                    (body)
+                                                => {
+                                                let mut response = Response::builder();
+                                                  let mut response = response.status(409);
+                                                  {
+                                                    let mut response_headers = response.headers_mut().unwrap();
+                                                    response_headers.insert(
+                                                        CONTENT_TYPE,
+                                                        HeaderValue::from_static("application/json"));
+                                                  }
+
+                                                  let body_content =  tokio::task::spawn_blocking(move ||
+                                                      serde_json::to_vec(&body).map_err(|e| {
+                                                        error!(error = ?e);
+                                                        StatusCode::INTERNAL_SERVER_ERROR
+                                                      })).await.unwrap()?;
+                                                  response.body(Body::from(body_content))
+                                                },
+                                                apis::default::CreateMeetingTypeResponse::Status500
+                                                    (body)
+                                                => {
+                                                let mut response = Response::builder();
+                                                  let mut response = response.status(500);
+                                                  {
+                                                    let mut response_headers = response.headers_mut().unwrap();
+                                                    response_headers.insert(
+                                                        CONTENT_TYPE,
+                                                        HeaderValue::from_static("application/json"));
+                                                  }
+
+                                                  let body_content =  tokio::task::spawn_blocking(move ||
+                                                      serde_json::to_vec(&body).map_err(|e| {
+                                                        error!(error = ?e);
+                                                        StatusCode::INTERNAL_SERVER_ERROR
+                                                      })).await.unwrap()?;
+                                                  response.body(Body::from(body_content))
+                                                },
+                                                apis::default::CreateMeetingTypeResponse::Status503
+                                                    (body)
+                                                => {
+                                                let mut response = Response::builder();
+                                                  let mut response = response.status(503);
+                                                  {
+                                                    let mut response_headers = response.headers_mut().unwrap();
+                                                    response_headers.insert(
+                                                        CONTENT_TYPE,
+                                                        HeaderValue::from_static("application/json"));
+                                                  }
+
+                                                  let body_content =  tokio::task::spawn_blocking(move ||
+                                                      serde_json::to_vec(&body).map_err(|e| {
+                                                        error!(error = ?e);
+                                                        StatusCode::INTERNAL_SERVER_ERROR
+                                                      })).await.unwrap()?;
+                                                  response.body(Body::from(body_content))
+                                                },
+                                            },
+                                            Err(why) => {
+                                                    // Application code returned an error. This should not happen, as the implementation should
+                                                    // return a valid response.
+                                                    return api_impl.as_ref().handle_error(&method, &host, &cookies, why).await;
+                                            },
+                                        };
+
+
+                                        resp.map_err(|e| { error!(error = ?e); StatusCode::INTERNAL_SERVER_ERROR })
 }
 
 

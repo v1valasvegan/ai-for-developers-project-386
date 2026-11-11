@@ -69,6 +69,9 @@ test("invalid guest fields are inline, while other values remain valid", async (
       ["email", "a".repeat(243) + "@example.com"],
       ["idempotencyKey", "not-a-uuid"],
       ["startsAt", "2026-11-11T07:00:00"],
+      ["startsAt", "2026-11-31T07:00:00Z"],
+      ["startsAt", "2026-11-11T24:00:00Z"],
+      ["startsAt", "2026-11-11T07:00:00+24:00"],
     ]) {
       const response = await post(backend, "bookings", { ...payload, [field]: value });
       expect(response.status, field).toBe(400);
@@ -123,6 +126,36 @@ test.each([
     if (status === 409) expect((await second.json()).code).toBe("slot_conflict");
     const list = await fetch(`${backend.url}/api/bookings`).then((r) => r.json());
     expect(list.items).toHaveLength(status === 201 ? 2 : 1);
+  });
+});
+
+test("new bookings accept quarter-hour starts and the last full interval in explicit offsets", async () => {
+  await setup(async (backend) => {
+    const quarter = await post(backend, "bookings", {
+      ...payload,
+      startsAt: "2026-11-11T10:15:00+03:00",
+    });
+    expect(quarter.status).toBe(201);
+    const first = await quarter.json();
+    expect(first).toMatchObject({
+      startsAt: "2026-11-11T07:15:00Z",
+      endsAt: "2026-11-11T07:45:00Z",
+    });
+    const last = await post(backend, "bookings", {
+      ...payload,
+      startsAt: "2026-11-11T06:30:00-08:00",
+      idempotencyKey: "00000000-0000-4000-8000-000000000002",
+    });
+    expect(last.status).toBe(201);
+    const second = await last.json();
+    expect(second).toMatchObject({
+      startsAt: "2026-11-11T14:30:00Z",
+      endsAt: "2026-11-11T15:00:00Z",
+    });
+    expect((await fetch(`${backend.url}/api/bookings`).then((r) => r.json())).items).toEqual([
+      { ...first, status: "upcoming" },
+      { ...second, status: "upcoming" },
+    ]);
   });
 });
 
@@ -261,6 +294,26 @@ test("new requests revalidate the whole grid, workday and current Moscow window"
     const stale = await post(backend, "bookings", payload);
     expect(stale.status).toBe(400);
     expect((await stale.json()).fieldErrors.startsAt).toEqual(expect.any(String));
+  });
+});
+
+test("an unreadable server time fails safely without creating a booking or exposing clock details", async () => {
+  await setup(async (backend) => {
+    await backend.setTime("private-invalid-clock-input");
+    for (const response of [
+      await post(backend, "bookings", payload),
+      await fetch(`${backend.url}/api/bookings`),
+      await fetch(`${backend.url}/api/meeting-types/intro-30/slots`),
+    ]) {
+      expect(response.status).toBe(500);
+      const error = await response.json();
+      expect(error).toEqual({ code: "internal_error", message: expect.any(String) });
+      expect(error.message).not.toMatch(/clock|private|parse|invalid/i);
+    }
+    expect((await fetch(`${backend.url}/api/health`)).status).toBe(200);
+    await backend.setTime(time);
+    expect((await fetch(`${backend.url}/api/bookings`).then((r) => r.json())).items).toEqual([]);
+    expect((await post(backend, "bookings", payload)).status).toBe(201);
   });
 });
 

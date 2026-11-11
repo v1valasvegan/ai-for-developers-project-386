@@ -1,3 +1,5 @@
+mod availability;
+mod clock;
 mod storage;
 
 use async_trait::async_trait;
@@ -7,14 +9,18 @@ use http::Method;
 use okoshko_api::{
     apis::{
         ErrorHandler,
-        default::{Default as ServiceApi, GetHealthResponse, ListMeetingTypesResponse},
+        default::{
+            Default as ServiceApi, GetHealthResponse, ListMeetingTypeSlotsResponse,
+            ListMeetingTypesResponse,
+        },
     },
-    models::{ApiError, Health},
+    models::{ApiError, Health, ListMeetingTypeSlotsPathParams},
 };
 use std::{convert::Infallible, path::PathBuf, sync::Arc};
 
 struct Api {
     database_path: PathBuf,
+    clock: clock::Clock,
 }
 
 #[async_trait]
@@ -31,6 +37,51 @@ impl ServiceApi<Infallible> for Api {
         Ok(GetHealthResponse::Status200_TheRequestHasSucceeded(
             Health::new("ok".to_owned()),
         ))
+    }
+
+    async fn list_meeting_type_slots(
+        &self,
+        _method: &Method,
+        _host: &Host,
+        _cookies: &CookieJar,
+        path_params: &ListMeetingTypeSlotsPathParams,
+    ) -> Result<ListMeetingTypeSlotsResponse, Infallible> {
+        use ListMeetingTypeSlotsResponse as Response;
+        let now = match self.clock.now() {
+            Ok(now) => now,
+            Err(error) => {
+                eprintln!("Server clock failed: {error}");
+                return Ok(Response::Status500(ApiError::new(
+                    "internal_error".into(),
+                    "Не удалось рассчитать доступность".into(),
+                )));
+            }
+        };
+        let path = self.database_path.clone();
+        let id = path_params.id.clone();
+        Ok(
+            match tokio::task::spawn_blocking(move || storage::slots(&path, &id, now)).await {
+                Ok(Ok(Some(slots))) => Response::Status200_TheRequestHasSucceeded(slots),
+                Ok(Ok(None)) => Response::Status404(ApiError::new(
+                    "meeting_type_not_found".into(),
+                    "Тип встречи не найден".into(),
+                )),
+                Ok(Err(error)) if storage::is_unavailable(&error) => {
+                    eprintln!("Storage unavailable: {error}");
+                    Response::Status503(ApiError::new(
+                        "storage_unavailable".into(),
+                        "Хранилище временно недоступно. Повторите попытку".into(),
+                    ))
+                }
+                error => {
+                    eprintln!("Availability failed: {error:?}");
+                    Response::Status500(ApiError::new(
+                        "internal_error".into(),
+                        "Не удалось рассчитать доступность".into(),
+                    ))
+                }
+            },
+        )
     }
 
     async fn list_meeting_types(
@@ -79,7 +130,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let address = std::env::var("BIND_ADDR").unwrap_or_else(|_| "127.0.0.1:3000".to_owned());
     let listener = tokio::net::TcpListener::bind(&address).await?;
     println!("Окошко API: http://{}", listener.local_addr()?);
-    let app = okoshko_api::server::new(Arc::new(Api { database_path }));
+    let app = okoshko_api::server::new(Arc::new(Api {
+        database_path,
+        clock: clock::Clock::configured(),
+    }));
     axum::serve(listener, app)
         .with_graceful_shutdown(async {
             if let Err(error) = tokio::signal::ctrl_c().await {

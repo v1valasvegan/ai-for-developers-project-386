@@ -3,7 +3,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetHealthData, GetHealthResponses, ListMeetingTypesData, ListMeetingTypesErrors, ListMeetingTypesResponses } from './types.gen';
+import type { GetHealthData, GetHealthResponses, ListMeetingTypesData, ListMeetingTypesErrors, ListMeetingTypeSlotsData, ListMeetingTypeSlotsErrors, ListMeetingTypeSlotsResponses, ListMeetingTypesResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -28,3 +28,8 @@ export const getHealth = <ThrowOnError extends boolean = false>(options?: Option
  * Получить доступные типы встреч в порядке кода.
  */
 export const listMeetingTypes = <ThrowOnError extends boolean = false>(options?: Options<ListMeetingTypesData, ThrowOnError>): RequestResult<ListMeetingTypesResponses, ListMeetingTypesErrors, ThrowOnError> => (options?.client ?? client).get<ListMeetingTypesResponses, ListMeetingTypesErrors, ThrowOnError>({ url: '/api/meeting-types', ...options });
+
+/**
+ * Получить свободные слоты типа; просмотр ничего не резервирует.
+ */
+export const listMeetingTypeSlots = <ThrowOnError extends boolean = false>(options: Options<ListMeetingTypeSlotsData, ThrowOnError>): RequestResult<ListMeetingTypeSlotsResponses, ListMeetingTypeSlotsErrors, ThrowOnError> => (options.client ?? client).get<ListMeetingTypeSlotsResponses, ListMeetingTypeSlotsErrors, ThrowOnError>({ url: '/api/meeting-types/{id}/slots', ...options });

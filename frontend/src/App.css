@@ -217,6 +217,55 @@ p {
   outline: 2px solid var(--ink);
   outline-offset: 4px;
 }
+.booking-flow {
+  overflow-wrap: anywhere;
+}
+.booking-zone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.booking-zone select {
+  max-width: 100%;
+  min-height: 44px;
+  padding: 8px;
+  font: inherit;
+  color: var(--ink);
+  background: #fffdf9;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.booking-zone select:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.booking-dates,
+.booking-times {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-block: 24px;
+}
+.booking-dates button,
+.booking-times button {
+  min-height: 44px;
+  padding: 12px;
+  color: var(--ink);
+  background: #fffdf9;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.booking-dates button[aria-pressed="true"],
+.booking-times button:hover {
+  color: #fffdf9;
+  background: var(--red);
+}
+.booking-dates button:disabled {
+  color: #77756e;
+  background: transparent;
+  cursor: not-allowed;
+}
 .catalogue-list {
   display: grid;
   gap: 16px;

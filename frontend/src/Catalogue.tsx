@@ -7,7 +7,7 @@ type CatalogueState =
   | { status: "ready"; items: MeetingType[] }
   | { status: "error" };
 
-export default function Catalogue() {
+export default function Catalogue({ onSelect }: { onSelect?: (id: string) => void }) {
   const [state, setState] = useState<CatalogueState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
 
@@ -50,6 +50,11 @@ export default function Catalogue() {
           <h2>{type.title}</h2>
           <p className="catalogue-description">{type.description}</p>
           <p className="catalogue-duration">{type.durationMinutes} минут</p>
+          {onSelect ? (
+            <button className="page-link" type="button" onClick={() => onSelect(type.id)}>
+              Выбрать {type.title}
+            </button>
+          ) : null}
         </li>
       ))}
     </ul>

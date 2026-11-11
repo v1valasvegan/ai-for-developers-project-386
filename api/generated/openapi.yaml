@@ -52,6 +52,50 @@ paths:
                 $ref: '#/components/schemas/ApiError'
       tags:
         - Default
+  /api/meeting-types/{id}/slots:
+    get:
+      operationId: listMeetingTypeSlots
+      description: Получить свободные слоты типа; просмотр ничего не резервирует.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Код типа встречи.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlotList'
+              example:
+                serverTime: '2026-11-10T12:00:00Z'
+                windowStart: '2026-11-10T21:00:00Z'
+                windowEnd: '2026-11-24T21:00:00Z'
+                timeZone: Europe/Moscow
+                items: []
+        '404':
+          description: Указанный тип встречи не существует.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Непредвиденная внутренняя ошибка.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Хранилище временно недоступно.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Default
 components:
   schemas:
     ApiError:
@@ -134,6 +178,62 @@ components:
               description: Обсудим ваш вопрос
               durationMinutes: 30
       description: Каталог, отсортированный по коду типа встречи.
+    Slot:
+      type: object
+      required:
+        - startsAt
+        - endsAt
+      properties:
+        startsAt:
+          type: string
+          format: date-time
+          description: Начало включительно, момент UTC.
+          example: '2026-11-11T07:00:00Z'
+        endsAt:
+          type: string
+          format: date-time
+          description: Окончание исключительно, момент UTC.
+          example: '2026-11-11T07:30:00Z'
+      description: Свободный интервал выбранного типа встречи.
+    SlotList:
+      type: object
+      required:
+        - serverTime
+        - windowStart
+        - windowEnd
+        - timeZone
+        - items
+      properties:
+        serverTime:
+          type: string
+          format: date-time
+          description: Серверное время расчёта.
+          example: '2026-11-10T12:00:00Z'
+        windowStart:
+          type: string
+          format: date-time
+          description: 'Включённая граница окна: московское завтра 00:00.'
+          example: '2026-11-10T21:00:00Z'
+        windowEnd:
+          type: string
+          format: date-time
+          description: 'Исключённая граница: московская дата D+15 00:00.'
+          example: '2026-11-24T21:00:00Z'
+        timeZone:
+          type: string
+          enum:
+            - Europe/Moscow
+          description: Пояс расписания владельца.
+          example: Europe/Moscow
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Slot'
+          description: Свободные слоты, отсортированные по началу.
+          example:
+            - startsAt: '2026-11-11T07:00:00Z'
+              endsAt: '2026-11-11T07:30:00Z'
+      description: Доступность на всё актуальное окно, даже при пустом items.
 servers:
   - url: http://localhost:3000
     description: Локальный сервер разработки

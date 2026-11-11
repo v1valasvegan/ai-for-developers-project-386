@@ -1041,6 +1041,43 @@ p {
   background: var(--paper);
   box-shadow: 0 4px 16px #24292318;
 }
+.owner-page [role="tablist"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.owner-page [role="tab"] {
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+.owner-page [role="tab"][aria-selected="true"] {
+  border-bottom: 3px solid var(--red);
+  font-weight: 700;
+}
+.owner-bookings {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.owner-bookings li {
+  padding: 20px;
+  border: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.owner-bookings .ongoing-booking {
+  border-left: 5px solid var(--red);
+  background: #fbe8df;
+}
+.owner-bookings .ongoing-booking strong {
+  color: var(--red);
+}
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

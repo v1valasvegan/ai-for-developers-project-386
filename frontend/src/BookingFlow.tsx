@@ -54,7 +54,8 @@ type AvailabilityState =
   | { status: "loading" }
   | { status: "error" }
   | { status: "invalid" }
-  | { status: "ready"; type: MeetingType; slots: SlotList };
+  | { status: "empty" }
+  | { status: "ready"; type?: MeetingType; slots: SlotList; compatible: MeetingType[] };
 
 function TimeStep({
   id,
@@ -67,8 +68,10 @@ function TimeStep({
   attempt: submission,
   setAttempt: setSubmission,
   onUnavailable,
+  timeFirst,
 }: {
   id: string;
+  timeFirst: boolean;
   startsAt: string | null;
   timeZone: string;
   navigate: (path: string) => void;
@@ -86,15 +89,48 @@ function TimeStep({
     const controller = new AbortController();
     async function load() {
       try {
-        const [catalogue, availability] = await Promise.all([
-          listMeetingTypes({ signal: controller.signal, throwOnError: true }),
-          listMeetingTypeSlots({ path: { id }, signal: controller.signal, throwOnError: true }),
-        ]);
-        if (controller.signal.aborted) return;
-        const type = catalogue.data.items.find((item) => item.id === id);
-        setState(
-          type ? { status: "ready", type, slots: availability.data } : { status: "invalid" },
+        const catalogue = await listMeetingTypes({ signal: controller.signal, throwOnError: true });
+        const types = catalogue.data.items;
+        if (id && !types.some((type) => type.id === id)) {
+          if (!controller.signal.aborted) setState({ status: "invalid" });
+          return;
+        }
+        const requested = id ? types.filter((type) => type.id === id) : types;
+        const availability = await Promise.all(
+          requested.map(async (type) => ({
+            type,
+            slots: (
+              await listMeetingTypeSlots({
+                path: { id: type.id },
+                signal: controller.signal,
+                throwOnError: true,
+              })
+            ).data,
+          })),
         );
+        if (controller.signal.aborted) return;
+        if (availability.length === 0) {
+          setState({ status: "empty" });
+          return;
+        }
+        const unique = new Map(
+          availability.flatMap(({ slots }) => slots.items).map((slot) => [slot.startsAt, slot]),
+        );
+        setState({
+          status: "ready",
+          type: id ? requested[0] : undefined,
+          slots: {
+            ...availability[0]!.slots,
+            items: [...unique.values()].sort(
+              (a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt),
+            ),
+          },
+          compatible: availability
+            .filter(({ slots }) =>
+              slots.items.some((slot) => Date.parse(slot.startsAt) === parseStart(startsAt)),
+            )
+            .map(({ type }) => type),
+        });
       } catch (error) {
         if (controller.signal.aborted) return;
         setState({
@@ -110,7 +146,7 @@ function TimeStep({
     }
     void load();
     return () => controller.abort();
-  }, [id, attempt]);
+  }, [id, startsAt, attempt]);
 
   const back = (
     <button className="page-link" type="button" onClick={() => navigate("/book")}>
@@ -141,12 +177,19 @@ function TimeStep({
         {back}
       </>
     );
+  if (state.status === "empty" && startsAt === null)
+    return (
+      <>
+        <p>Пока нет доступных типов встреч</p>
+        {back}
+      </>
+    );
   const start = parseStart(startsAt);
   const selected =
     state.status === "ready" && start !== null
       ? state.slots.items.find((slot) => Date.parse(slot.startsAt) === start)
       : undefined;
-  if (state.status === "invalid" || (startsAt !== null && !selected))
+  if (state.status === "invalid" || state.status === "empty" || (startsAt !== null && !selected))
     return (
       <>
         <p role="alert">
@@ -158,11 +201,44 @@ function TimeStep({
       </>
     );
 
-  const summary = (
+  const summary = state.type ? (
     <p>
       Выбранный тип: {state.type.title} · {state.type.durationMinutes} минут
     </p>
-  );
+  ) : null;
+  if (selected && !id)
+    return (
+      <section aria-label="Выбор подходящего типа">
+        <h2>Выберите тип встречи</h2>
+        <p>
+          Выбранное начало: {dateLabel(localDate(selected.startsAt, timeZone))} ·{" "}
+          {timeLabel(selected.startsAt, timeZone)} · {timeZone}
+        </p>
+        <ul className="catalogue-list" aria-label="Подходящие типы встреч">
+          {state.compatible.map((type) => (
+            <li key={type.id}>
+              <h3>{type.title}</h3>
+              <p className="catalogue-description">{type.description}</p>
+              <p>{type.durationMinutes} минут</p>
+              <button
+                className="page-link"
+                type="button"
+                onClick={() =>
+                  navigate(
+                    `/book/${encodeURIComponent(type.id)}?startsAt=${encodeURIComponent(selected.startsAt)}`,
+                  )
+                }
+              >
+                Выбрать {type.title}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <button className="page-link" type="button" onClick={() => navigate("/book?choose=time")}>
+          Назад
+        </button>
+      </section>
+    );
   if (selected)
     return (
       <section aria-label="Выбранное время">
@@ -191,7 +267,13 @@ function TimeStep({
           type="button"
           className="page-link"
           disabled={submission !== null}
-          onClick={() => navigate(`/book/${encodeURIComponent(id)}`)}
+          onClick={() =>
+            navigate(
+              timeFirst
+                ? `/book?startsAt=${encodeURIComponent(selected.startsAt)}`
+                : `/book/${encodeURIComponent(id)}`,
+            )
+          }
         >
           Назад
         </button>
@@ -253,11 +335,12 @@ function TimeStep({
             key={slot.startsAt}
             onClick={() =>
               navigate(
-                `/book/${encodeURIComponent(id)}?startsAt=${encodeURIComponent(slot.startsAt)}`,
+                `${id ? `/book/${encodeURIComponent(id)}` : "/book"}?startsAt=${encodeURIComponent(slot.startsAt)}`,
               )
             }
           >
-            {timeLabel(slot.startsAt, timeZone)}–{timeLabel(slot.endsAt, timeZone)}
+            {timeLabel(slot.startsAt, timeZone)}
+            {id ? `–${timeLabel(slot.endsAt, timeZone)}` : ""}
           </button>
         ))}
       </div>
@@ -276,6 +359,12 @@ export default function BookingFlow({ path }: { path: string }) {
   const [confirmed, setConfirmed] = useState<Booking | null>(null);
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [notice, setNotice] = useState("");
+  const [timeFirst, setTimeFirst] = useState(
+    () =>
+      !path.replace(/^\/book\/?/, "") &&
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).has("startsAt"),
+  );
   useEffect(() => {
     const onPop = () =>
       setLocation({ path: window.location.pathname, search: window.location.search });
@@ -283,6 +372,11 @@ export default function BookingFlow({ path }: { path: string }) {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
   function navigate(url: string) {
+    if (url === "/book") setTimeFirst(false);
+    if (url === "/book?choose=time") {
+      setTimeFirst(true);
+      url = "/book";
+    }
     window.history.pushState(null, "", url);
     setLocation({ path: window.location.pathname, search: window.location.search });
   }
@@ -344,10 +438,11 @@ export default function BookingFlow({ path }: { path: string }) {
             Записаться ещё
           </button>
         </section>
-      ) : activeId ? (
+      ) : activeId || activeStart !== null || timeFirst ? (
         <TimeStep
-          key={activeId}
+          key={`${activeId}:${parseStart(activeStart) ?? ""}`}
           id={activeId}
+          timeFirst={timeFirst}
           startsAt={activeStart}
           timeZone={timeZone}
           navigate={navigate}
@@ -362,7 +457,21 @@ export default function BookingFlow({ path }: { path: string }) {
           }}
         />
       ) : (
-        <Catalogue onSelect={(typeId) => navigate(`/book/${encodeURIComponent(typeId)}`)} />
+        <>
+          <button
+            className="page-link"
+            type="button"
+            onClick={() => document.getElementById("type-first-catalogue")?.scrollIntoView?.()}
+          >
+            Выбрать тип встречи
+          </button>
+          <button className="page-link" type="button" onClick={() => navigate("/book?choose=time")}>
+            Выбрать дату и время
+          </button>
+          <div id="type-first-catalogue">
+            <Catalogue onSelect={(typeId) => navigate(`/book/${encodeURIComponent(typeId)}`)} />
+          </div>
+        </>
       )}
     </div>
   );

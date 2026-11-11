@@ -11,6 +11,8 @@ test("time-first guest uses Back and F5, chooses a compatible type and books thr
   try {
     backend = await startBackend(database.path, { time: "2026-11-10T12:00:00Z" });
     frontend = await startFrontend(backend.url);
+    await page.goto(`${frontend.url}/owner`);
+    await page.getByRole("tab", { name: "Типы встреч" }).click();
     for (const type of [
       { id: "intro-30", title: "Знакомство", description: "Обсудим вопрос", durationMinutes: 30 },
       {
@@ -20,9 +22,15 @@ test("time-first guest uses Back and F5, chooses a compatible type and books thr
         durationMinutes: 60,
       },
     ]) {
-      expect(
-        (await request.post(`${backend.url}/api/meeting-types`, { data: type })).status(),
-      ).toBe(201);
+      await page.getByRole("textbox", { name: "Код типа встречи" }).fill(type.id);
+      await page.getByRole("textbox", { name: "Название", exact: true }).fill(type.title);
+      await page.getByRole("textbox", { name: "Описание", exact: true }).fill(type.description);
+      await page
+        .getByRole("spinbutton", { name: "Длительность, минут" })
+        .fill(String(type.durationMinutes));
+      await page.getByRole("button", { name: "Создать тип встречи" }).click();
+      await expect(page.getByRole("heading", { name: type.title, exact: true })).toBeVisible();
+      await expect(page.getByRole("textbox", { name: "Код типа встречи" })).toHaveValue("");
     }
     await page.goto(`${frontend.url}/book`);
     await page.getByRole("button", { name: "Выбрать дату и время", exact: true }).click();
@@ -75,6 +83,25 @@ test("time-first guest uses Back and F5, chooses a compatible type and books thr
     );
     await page.reload();
     await expect(page.getByRole("alert")).toContainText("Ссылка неверна или устарела");
+    await page.getByRole("link", { name: "Управление", exact: true }).click();
+    await expect(page.getByRole("tab", { name: "Встречи", exact: true })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    const meetings = page.getByRole("list", { name: "Текущие и предстоящие встречи" });
+    await expect(meetings.getByRole("listitem")).toHaveCount(1);
+    await expect(meetings.getByRole("heading", { name: "Знакомство", exact: true })).toBeVisible();
+    await expect(meetings.getByText("Анна", { exact: true })).toBeVisible();
+    await expect(meetings.getByText("anna@example.com", { exact: true })).toBeVisible();
+    await expect(
+      meetings.getByText("11 ноября 2026 г. · 10:00–10:30", { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText("Europe/Moscow", { exact: true })).toBeVisible();
+    await page.reload();
+    await expect(meetings.getByText("anna@example.com", { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
   } finally {
     await frontend?.stop();
     await backend?.stop();

@@ -1,5 +1,6 @@
 import { Container } from "@mantine/core";
 import "./App.css";
+import Catalogue from "./Catalogue";
 
 const steps = [
   {
@@ -164,7 +165,7 @@ function SchedulePreview() {
   );
 }
 
-function BookingPlaceholder() {
+function BookingCatalogue() {
   return (
     <div className="landing">
       <Container size="xl" className="page-container">
@@ -180,14 +181,14 @@ function BookingPlaceholder() {
             Скоро откроемся
           </span>
         </header>
-        <main className="hero booking-placeholder" aria-labelledby="booking-title">
+        <main className="booking-catalogue" aria-labelledby="booking-title">
           <div className="hero-copy">
             <p className="eyebrow">Страница записи</p>
-            <h1 id="booking-title">Запись скоро откроется</h1>
+            <h1 id="booking-title">Типы встреч</h1>
             <p className="hero-description">
-              Бронирование ещё в разработке. Позже здесь можно будет выбрать тип встречи, свободное
-              время и записаться на звонок без регистрации.
+              Посмотрите доступные типы встреч. Выбор времени и бронирование ещё в разработке.
             </p>
+            <Catalogue />
             <div className="hero-actions">
               <a className="page-link" href="/">
                 Вернуться на главную
@@ -201,7 +202,7 @@ function BookingPlaceholder() {
 }
 
 export default function App({ path = "/" }: { path?: string }) {
-  if (path === "/book" || path === "/book/") return <BookingPlaceholder />;
+  if (path === "/book" || path === "/book/") return <BookingCatalogue />;
   return (
     <div className="landing">
       <a className="skip-link" href="#main">

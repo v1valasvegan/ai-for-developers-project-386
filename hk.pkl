@@ -2,12 +2,12 @@ amends "package://github.com/jdx/hk/releases/download/v2.11.0/hk@2.11.0#/Config.
 
 steps {
   ["format"] {
-    glob = List("**/*.ts", "**/*.tsx", "**/*.mjs", "**/*.js", "**/*.json", "**/*.jsonc", "**/*.html", "**/*.md", "**/*.yml", "**/*.yaml")
+    glob = List("**/*.ts", "**/*.tsx", "**/*.mjs", "**/*.js", "**/*.jsx", "**/*.json", "**/*.jsonc", "**/*.html", "**/*.md", "**/*.yml", "**/*.yaml")
     exclude = List("api/generated/**", "backend/generated/**", "frontend/src/api/generated/**", ".github/workflows/hexlet-check.yml", ".github/workflows/README.md", "package-lock.json")
     check = "npx --no-install oxfmt --ignore-path .gitignore --ignore-path .oxfmtignore --check {{files}}"
   }
   ["oxlint"] {
-    glob = List("frontend/src/**/*.tsx", "frontend/src/**/*.ts", "frontend/vite.config.ts", "scripts/*.mjs", "tests/*.mjs", "openapi-ts.config.ts", "commitlint.config.js")
+    glob = List("frontend/src/**/*.tsx", "frontend/src/**/*.ts", "frontend/src/**/*.jsx", "frontend/vite.config.ts", "scripts/*.mjs", "tests/**/*.mjs", "openapi-ts.config.ts", "playwright.config.mjs", "commitlint.config.js")
     exclude = List("frontend/src/api/generated/**")
     check = "npx --no-install oxlint --deny-warnings {{files}}"
   }

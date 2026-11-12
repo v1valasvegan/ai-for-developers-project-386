@@ -2,6 +2,7 @@ node_modules/
 .cache/
 frontend/dist/
 backend/target/
+data/
 .DS_Store
 .env
 .env.*

@@ -28,13 +28,17 @@ test("landing explains the future guest journey without internal product constra
 });
 
 test.each(["/book", "/book/"])(
-  "booking placeholder at %s explains its status and links home",
+  "booking catalogue at %s shows first loading, not false empty or a booking promise",
   (path) => {
     const html = renderLanding(path);
-    expect(html).toContain("Запись скоро откроется");
-    expect(html).toContain("Бронирование ещё в разработке");
+    expect(html).toContain("Типы встреч");
+    expect(html).toContain("Загружаем типы встреч");
+    expect(html).toContain("Начните с типа встречи или свободного времени");
+    expect(html).toContain("Выбрать тип встречи");
+    expect(html).toContain("Выбрать дату и время");
+    expect(html).not.toContain("Пока нет доступных типов встреч");
     expect(html).toMatch(/<a\b[^>]*href="\/"[^>]*>Вернуться на главную<\/a>/);
-    expect(html).not.toMatch(/<(form|input|button|table)\b/);
+    expect(html).not.toMatch(/<(form|input|table)\b/);
   },
 );
 

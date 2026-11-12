@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { MantineProvider } from "@mantine/core";
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, test, vi } from "vitest";
 import { http, HttpResponse } from "msw";
@@ -124,6 +124,11 @@ test("initial loading and failure offer retry; background failure keeps the real
       expect(await screen.findByRole("alert")).toHaveTextContent("Список мог устареть");
       expect(screen.getByText("Анна")).toBeVisible();
       expect(screen.getByText("anna@example.com")).toBeVisible();
+      network.resetHandlers();
+      await owner.click(screen.getByRole("button", { name: "Повторить" }));
+      await waitFor(() => expect(screen.getByRole("button", { name: "Обновить" })).toBeEnabled());
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(screen.getByText("Анна")).toBeVisible();
     });
   } finally {
     release();

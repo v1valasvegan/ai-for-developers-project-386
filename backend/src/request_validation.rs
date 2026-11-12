@@ -13,7 +13,7 @@ use std::collections::HashMap;
 // The generated Axum extractor otherwise returns plaintext 422 responses for missing
 // or mistyped fields. Keep transport failures in the same public error envelope as
 // business validation; the generated DTO and handler still process valid requests.
-pub async fn meeting_type_json(request: Request, next: Next) -> Response {
+pub async fn validate_creation_json(request: Request, next: Next) -> Response {
     let booking = request.uri().path() == "/api/bookings";
     if request.method() != Method::POST
         || (!booking && request.uri().path() != "/api/meeting-types")

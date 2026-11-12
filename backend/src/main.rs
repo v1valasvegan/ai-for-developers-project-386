@@ -234,7 +234,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         clock: clock::Clock::configured(),
     }))
     .layer(axum::middleware::from_fn(
-        request_validation::meeting_type_json,
+        request_validation::validate_creation_json,
     ));
     axum::serve(listener, app)
         .with_graceful_shutdown(async {

@@ -1,0 +1,386 @@
+.booking-catalogue:has(.booking-calendar-card) .hero-copy {
+  max-width: 1120px;
+}
+.booking-catalogue:has(.booking-calendar-card) .hero-actions {
+  display: none;
+}
+.booking-catalogue:has(.booking-calendar-card) .booking-flow {
+  margin-top: 0;
+}
+.booking-catalogue:has(.booking-calendar-card) h1 {
+  font-size: clamp(26px, 3vw, 34px);
+  margin-bottom: 20px;
+}
+.booking-calendar-card {
+  display: grid;
+  grid-template-columns: 220px minmax(300px, 1fr) 300px;
+  border: 1px solid #d6ccbb;
+  border-radius: 14px;
+  background: #fffcf6;
+  box-shadow: 0 8px 32px #57432809;
+  overflow: hidden;
+  min-height: 490px;
+  font-size: 14px;
+}
+.booking-calendar-card > * {
+  min-width: 0;
+}
+.booking-calendar-card .scroll-region {
+  margin: 0;
+}
+.booking-calendar-card p,
+.booking-calendar-card h3 {
+  margin: 0;
+}
+.booking-calendar-card button {
+  font: inherit;
+  border-radius: 7px;
+  min-height: 40px;
+}
+.booking-calendar-card button:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+.booking-calendar-card button:disabled {
+  cursor: default;
+  opacity: 1;
+}
+.meeting-about {
+  display: flex;
+  flex-direction: column;
+  padding: 28px 22px;
+  background: #f1eadc;
+  border-right: 1px solid #e3ddd2;
+}
+.meeting-window {
+  width: 34px;
+  height: 42px;
+  stroke: var(--red);
+  stroke-width: 1.2;
+  margin-bottom: 26px;
+}
+.booking-calendar-card .meeting-overline {
+  color: #79736a;
+  text-transform: uppercase;
+  letter-spacing: 1.1px;
+  font-size: 9px;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+.booking-calendar-card .meeting-about h3 {
+  font-size: 23px;
+  line-height: 1.25;
+  margin-bottom: 12px;
+}
+.meeting-description {
+  color: #6e685e;
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+.booking-calendar-card .meeting-duration {
+  margin: 22px 0;
+  font-size: 12px;
+}
+.booking-calendar-card .booking-zone {
+  display: grid;
+  gap: 7px;
+  font-size: 11px;
+  color: #79736a;
+}
+.booking-calendar-card .booking-zone select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 11px;
+  min-height: 38px;
+  padding: 8px 30px 8px 8px;
+  background-size: 12px;
+  background-position: right 9px center;
+}
+.booking-calendar-card .meeting-schedule-note {
+  color: #898071;
+  font-size: 11px;
+  line-height: 1.7;
+  margin-top: auto;
+  padding-top: 28px;
+}
+.meeting-month-panel {
+  padding: 26px 24px;
+  display: flex;
+  flex-direction: column;
+}
+.meeting-month-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.booking-calendar-card .meeting-month-heading h3 {
+  font-size: 17px;
+  text-transform: capitalize;
+}
+.meeting-month-heading > div {
+  display: flex;
+  gap: 4px;
+}
+.meeting-month-heading button {
+  width: 30px;
+  min-height: 32px;
+  background: transparent;
+  font-size: 23px;
+  color: #766c5c;
+}
+.meeting-month-heading button:disabled {
+  color: #cec6b8;
+}
+.meeting-month {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+}
+.meeting-month th {
+  color: #8d8375;
+  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  height: 32px;
+  text-align: center;
+}
+.meeting-month td {
+  height: 49px;
+  padding: 0 2px;
+  text-align: center;
+}
+.meeting-month button {
+  width: min(44px, 100%);
+  height: 42px;
+  padding: 0;
+  background: #eee9df;
+  color: var(--ink);
+}
+.meeting-month button:hover:not(:disabled) {
+  background: #ead8ca;
+}
+.meeting-month button:disabled {
+  background: transparent;
+  color: #b5ac9e;
+}
+.meeting-month button.meeting-busy-day {
+  background: #e5e0d7;
+  color: #8c8171;
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;
+}
+.meeting-month button[aria-pressed="true"] {
+  background: var(--red);
+  color: #fffaf4;
+  text-decoration: none;
+}
+.booking-calendar-card .meeting-calendar-note {
+  font-size: 10px;
+  line-height: 1.7;
+  color: #9b8f7d;
+  margin-top: 20px;
+}
+.meeting-legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: 30px;
+  font-size: 10px;
+  color: #8b7e6b;
+}
+.meeting-legend > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.meeting-free-dot,
+.meeting-busy-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: #c5b9a4;
+}
+.meeting-busy-dot {
+  background: #a49a8c;
+}
+.meeting-times-panel {
+  padding: 26px 20px 20px;
+  border-left: 1px solid #e3ddd2;
+}
+.booking-calendar-card .meeting-times-panel h3 {
+  font-size: 16px;
+  text-transform: capitalize;
+  line-height: 1.4;
+}
+.booking-calendar-card .meeting-timezone-note {
+  color: #8e8270;
+  font-size: 11px;
+  margin: 7px 0 18px;
+}
+.meeting-occupied {
+  padding: 0;
+  margin: 0 0 14px;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+.meeting-occupied li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 4px;
+  border-left: 3px solid #a49a8c;
+  background: #eae5dc;
+  font-size: 12px;
+}
+.meeting-occupied strong {
+  font-size: 11px;
+  font-weight: 500;
+  color: #81776a;
+  flex-shrink: 0;
+}
+.booking-calendar-card .meeting-choose-note {
+  color: #8e8270;
+  font-size: 11px;
+  margin-bottom: 12px;
+}
+.booking-calendar-card .meeting-time-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 3px;
+}
+.booking-calendar-card .meeting-time-options button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  background: #fffdf8;
+  border: 1px solid #e3ddd2;
+  padding: 9px 11px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.meeting-time-options button > span:last-child {
+  color: #ac9c86;
+  font-size: 13px;
+}
+.booking-calendar-card .meeting-time-options button:hover:not(:disabled) {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fffaf4;
+}
+.meeting-time-options button:hover:not(:disabled) > span:last-child {
+  color: #fffaf4;
+}
+.booking-calendar-card .meeting-time-options .meeting-occupied-option {
+  color: #8a8071;
+  background: repeating-linear-gradient(135deg, #e9e5df, #e9e5df 4px, #e3dfd8 4px, #e3dfd8 5px);
+  border-color: #d8d1c7;
+}
+.meeting-occupied-option > span:last-child {
+  font-size: 9px;
+  color: #8a8071;
+}
+.booking-calendar-card .meeting-empty {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #8d7c67;
+  margin: 12px 0;
+}
+.booking-calendar-card .meeting-times-note {
+  font-size: 10px;
+  color: #9b8f7d;
+  line-height: 1.7;
+  margin-top: 15px;
+}
+@media (max-width: 1000px) and (min-width: 781px) {
+  .booking-calendar-card {
+    grid-template-columns: 180px minmax(250px, 1fr) 260px;
+  }
+  .meeting-about {
+    padding: 24px 16px;
+  }
+  .meeting-month-panel {
+    padding: 24px 12px;
+  }
+  .meeting-times-panel {
+    padding: 24px 14px;
+  }
+}
+@media (max-width: 780px) {
+  .booking-catalogue:has(.booking-calendar-card) .hero-copy {
+    max-width: 600px;
+  }
+  .booking-calendar-card {
+    display: flex;
+    flex-direction: column;
+  }
+  .meeting-about {
+    border-right: 0;
+    border-bottom: 1px solid #e3ddd2;
+    padding: 18px 20px;
+  }
+  .meeting-window,
+  .meeting-overline,
+  .meeting-schedule-note {
+    display: none;
+  }
+  .booking-calendar-card .meeting-about h3 {
+    font-size: 21px;
+    margin-bottom: 6px;
+  }
+  .meeting-description {
+    font-size: 12px;
+  }
+  .booking-calendar-card .meeting-duration {
+    margin: 12px 0;
+    font-size: 11px;
+  }
+  .booking-calendar-card .booking-zone {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .booking-calendar-card .booking-zone select {
+    flex: 1;
+    width: 0;
+    min-width: 100px;
+  }
+  .meeting-month-panel {
+    padding: 18px 16px;
+  }
+  .meeting-month-heading {
+    margin-bottom: 12px;
+  }
+  .meeting-month td {
+    height: 42px;
+  }
+  .meeting-month button {
+    height: 36px;
+    min-height: 36px;
+    width: min(38px, 100%);
+  }
+  .booking-calendar-card .meeting-calendar-note {
+    font-size: 9px;
+    margin-top: 12px;
+  }
+  .meeting-legend {
+    display: none;
+  }
+  .meeting-times-panel {
+    padding: 18px 20px;
+    border-left: 0;
+    border-top: 1px solid #e3ddd2;
+  }
+}

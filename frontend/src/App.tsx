@@ -1,5 +1,8 @@
 import { Container } from "@mantine/core";
 import "./App.css";
+import BookingFlow from "./BookingFlow";
+import Owner from "./Owner";
+import QueryProvider from "./QueryProvider";
 
 const steps = [
   {
@@ -164,7 +167,7 @@ function SchedulePreview() {
   );
 }
 
-function BookingPlaceholder() {
+function BookingCatalogue({ path }: { path: string }) {
   return (
     <div className="landing">
       <Container size="xl" className="page-container">
@@ -175,19 +178,17 @@ function BookingPlaceholder() {
               окошко<span className="wordmark-dot">.</span>
             </span>
           </a>
+          <nav className="header-nav" aria-label="Основная навигация">
+            <a href="/owner">Управление</a>
+          </nav>
           <span className="development-status">
             <span />
             Скоро откроемся
           </span>
         </header>
-        <main className="hero booking-placeholder" aria-labelledby="booking-title">
+        <main className="booking-catalogue" aria-label="Запись на встречу">
           <div className="hero-copy">
-            <p className="eyebrow">Страница записи</p>
-            <h1 id="booking-title">Запись скоро откроется</h1>
-            <p className="hero-description">
-              Бронирование ещё в разработке. Позже здесь можно будет выбрать тип встречи, свободное
-              время и записаться на звонок без регистрации.
-            </p>
+            <BookingFlow path={path} />
             <div className="hero-actions">
               <a className="page-link" href="/">
                 Вернуться на главную
@@ -201,7 +202,16 @@ function BookingPlaceholder() {
 }
 
 export default function App({ path = "/" }: { path?: string }) {
-  if (path === "/book" || path === "/book/") return <BookingPlaceholder />;
+  return (
+    <QueryProvider>
+      <AppRoutes path={path} />
+    </QueryProvider>
+  );
+}
+
+function AppRoutes({ path }: { path: string }) {
+  if (path === "/book" || path.startsWith("/book/")) return <BookingCatalogue path={path} />;
+  if (path === "/owner" || path === "/owner/") return <Owner />;
   return (
     <div className="landing">
       <a className="skip-link" href="#main">
@@ -217,6 +227,7 @@ export default function App({ path = "/" }: { path?: string }) {
           </a>
           <nav className="header-nav" aria-label="Основная навигация">
             <a href="#how-it-works">Как это работает</a>
+            <a href="/owner">Управление</a>
           </nav>
           <span className="development-status">
             <span />

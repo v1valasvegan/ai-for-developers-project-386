@@ -4,7 +4,7 @@ import { MantineProvider } from "@mantine/core";
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, test, vi } from "vitest";
-import { http, HttpResponse } from "msw";
+import { bypass, http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import App from "./App";
 import { client } from "./api/generated/client.gen";
@@ -167,29 +167,61 @@ test.each(["meetings tab", "browser focus", "page visibility"])(
   },
 );
 
-test("minute polling runs only for the visible active meetings tab", async () => {
-  await withOwner(async (owner, backend) => {
-    expect(await screen.findByText("Предстоящая")).toBeVisible();
-    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
-    // Reopen meetings so its polling lifecycle is controlled by UI timers.
-    await owner.click(screen.getByRole("tab", { name: "Типы встреч" }));
-    await owner.click(screen.getByRole("tab", { name: "Встречи" }));
-    await backend.setTime("2026-11-11T07:00:00Z");
-    await act(() => vi.advanceTimersByTimeAsync(60000));
-    expect(await screen.findByText("Идёт сейчас")).toBeVisible();
-    await owner.click(screen.getByRole("tab", { name: "Типы встреч" }));
-    await backend.setTime("2026-11-11T07:30:00Z");
-    await act(() => vi.advanceTimersByTimeAsync(120000));
-    // Old list stays mounted while inactive; no poll can remove it.
-    expect(screen.getByText("Анна")).toBeInTheDocument();
-    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
-    act(() => document.dispatchEvent(new Event("visibilitychange")));
-    await owner.click(screen.getByRole("tab", { name: "Встречи" }));
-    await act(() => vi.advanceTimersByTimeAsync(120000));
-    expect(screen.getByText("Анна")).toBeVisible();
-    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
-    act(() => document.dispatchEvent(new Event("visibilitychange")));
-    await act(() => vi.advanceTimersByTimeAsync(60000));
-    expect(await screen.findByText("Пока нет текущих и предстоящих встреч")).toBeVisible();
-  });
+test("минутное обновление работает только на активной видимой вкладке встреч", async () => {
+  const refreshReceived = Promise.withResolvers();
+  const releaseRefresh = Promise.withResolvers();
+  let reads = 0;
+  const network = setupServer(
+    http.get("*/api/bookings", async ({ request }) => {
+      reads += 1;
+      const response = await fetch(bypass(request));
+      if (reads === 2) {
+        refreshReceived.resolve();
+        await releaseRefresh.promise;
+      }
+      return response;
+    }),
+  );
+  const visibility = Object.getOwnPropertyDescriptor(document, "visibilityState");
+  try {
+    network.listen({ onUnhandledRequest: "bypass" });
+    await withOwner(async (owner, backend) => {
+      expect(await screen.findByText("Предстоящая")).toBeVisible();
+      vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+      await owner.click(screen.getByRole("tab", { name: "Типы встреч" }));
+      await owner.click(screen.getByRole("tab", { name: "Встречи" }));
+      await refreshReceived.promise;
+      expect(screen.getByRole("button", { name: "Обновить" })).toBeDisabled();
+      // Сначала завершаем обновление при возврате на вкладку: иначе Query
+      // объединит минутный запрос с ещё выполняющимся старым запросом.
+      releaseRefresh.resolve();
+      await waitFor(() => expect(screen.getByRole("button", { name: "Обновить" })).toBeEnabled());
+      expect(reads).toBe(2);
+      await backend.setTime("2026-11-11T07:00:00Z");
+      await act(() => vi.advanceTimersByTimeAsync(60000));
+      expect(await screen.findByText("Идёт сейчас")).toBeVisible();
+      expect(reads).toBe(3);
+      await owner.click(screen.getByRole("tab", { name: "Типы встреч" }));
+      await backend.setTime("2026-11-11T07:30:00Z");
+      const inactiveReads = reads;
+      await act(() => vi.advanceTimersByTimeAsync(120000));
+      expect(reads).toBe(inactiveReads);
+      expect(screen.getByText("Анна")).toBeInTheDocument();
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+      act(() => document.dispatchEvent(new Event("visibilitychange")));
+      await owner.click(screen.getByRole("tab", { name: "Встречи" }));
+      await act(() => vi.advanceTimersByTimeAsync(120000));
+      expect(reads).toBe(inactiveReads);
+      expect(screen.getByText("Анна")).toBeVisible();
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+      act(() => document.dispatchEvent(new Event("visibilitychange")));
+      await act(() => vi.advanceTimersByTimeAsync(60000));
+      expect(await screen.findByText("Пока нет текущих и предстоящих встреч")).toBeVisible();
+    });
+  } finally {
+    releaseRefresh.resolve();
+    network.close();
+    if (visibility) Object.defineProperty(document, "visibilityState", visibility);
+    else delete document.visibilityState;
+  }
 });

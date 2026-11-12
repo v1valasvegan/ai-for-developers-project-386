@@ -96,7 +96,10 @@ test("returning from a chosen start never briefly offers stale compatible types 
     const guest = userEvent.setup();
     expect(await screen.findByRole("button", { name: "Выбрать Разбор проекта" })).toBeVisible();
     await guest.click(screen.getByRole("button", { name: "Назад", exact: true }));
+    // Ждём календарь: при завершении загрузки селектор переносится в его панель.
+    await screen.findByRole("table", { name: "Календарь записи" });
     await guest.selectOptions(screen.getByLabelText("Часовой пояс"), "Europe/Moscow");
+    expect(screen.getByLabelText("Часовой пояс")).toHaveValue("Europe/Moscow");
     await screen.findByRole("button", { name: "17:30", exact: true });
     let release;
     const waiting = new Promise((resolve) => {
@@ -214,7 +217,9 @@ test("time-first unites starts but only offers types whose full duration fits", 
     const guest = userEvent.setup();
     expect(screen.getByRole("button", { name: "Выбрать тип встречи", exact: true })).toBeVisible();
     await guest.click(screen.getByRole("button", { name: "Выбрать дату и время", exact: true }));
+    await screen.findByRole("table", { name: "Календарь записи" });
     await guest.selectOptions(screen.getByLabelText("Часовой пояс"), "Europe/Moscow");
+    expect(screen.getByLabelText("Часовой пояс")).toHaveValue("Europe/Moscow");
     expect(await screen.findByRole("button", { name: "10:30", exact: true })).toBeVisible();
     expect(screen.getByRole("button", { name: "11 ноября 2026 г." })).toHaveAttribute(
       "aria-pressed",

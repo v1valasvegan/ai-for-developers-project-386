@@ -129,6 +129,8 @@ test("time-first keeps an adjacent short slot when real availability responses s
     });
     await page.goto(`${frontend.url}/book`);
     await page.getByRole("button", { name: "Выбрать дату и время", exact: true }).click();
+    await expect(page.getByRole("table", { name: "Календарь записи" })).toBeVisible();
+    await page.getByRole("combobox", { name: "Часовой пояс" }).selectOption("Europe/Moscow");
     await expect(
       page.getByRole("button", { name: "10:30–11:00 · Занято", exact: true }),
     ).toBeDisabled();
@@ -161,6 +163,7 @@ test("a fully booked day can still be opened to see its occupied interval", asyn
     await page.goto(`${frontend.url}/book/intro-30`);
     const day = page.getByRole("button", { name: "13 ноября 2026 г.", exact: true });
     await expect(day).toBeEnabled();
+    await page.getByRole("combobox", { name: "Часовой пояс" }).selectOption("Europe/Moscow");
     await day.click();
     await expect(day).toHaveAttribute("aria-pressed", "true");
     await expect(

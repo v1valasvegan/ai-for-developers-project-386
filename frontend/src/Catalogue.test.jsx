@@ -48,12 +48,14 @@ test("a guest chooses a type then a date and time, and Back requires a fresh tim
     );
     await guest.click(await screen.findByRole("button", { name: "Выбрать Знакомство" }));
     expect(await screen.findByRole("heading", { name: "Выберите день и время" })).toBeVisible();
+    await screen.findByRole("table", { name: "Календарь записи" });
     expect(screen.getByRole("heading", { name: "Знакомство", exact: true })).toBeVisible();
     expect(screen.getByText("◷ 30 минут")).toBeVisible();
     expect(
       screen.queryByRole("button", { name: "Выбрать Разбор проекта" }),
     ).not.toBeInTheDocument();
     await guest.selectOptions(screen.getByLabelText("Часовой пояс"), "Europe/Moscow");
+    expect(screen.getByLabelText("Часовой пояс")).toHaveValue("Europe/Moscow");
     expect(screen.getByRole("button", { name: "14 ноября 2026 г." })).toBeDisabled();
     expect(screen.getByRole("button", { name: "11 ноября 2026 г." })).toHaveAttribute(
       "aria-pressed",
@@ -106,8 +108,9 @@ test("the calendar shows a real occupied interval of another type without guest 
     );
     const guest = userEvent.setup();
     await screen.findByRole("heading", { name: "Выберите день и время" });
+    const calendar = await screen.findByRole("table", { name: "Календарь записи" });
     await guest.selectOptions(screen.getByLabelText("Часовой пояс"), "Europe/Moscow");
-    const calendar = screen.getByRole("table", { name: "Календарь записи" });
+    expect(screen.getByLabelText("Часовой пояс")).toHaveValue("Europe/Moscow");
     expect(
       within(calendar)
         .getAllByRole("columnheader")

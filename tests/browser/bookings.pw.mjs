@@ -50,12 +50,21 @@ test("owner creates a type, guest books and complete confirmation matches the re
     expect(
       (await page.getByLabel("Email", { exact: true }).boundingBox()).height,
     ).toBeGreaterThanOrEqual(44);
+    await page.clock.install();
     await page.getByRole("button", { name: "Подтвердить запись" }).click();
     await expect(page.getByRole("heading", { name: "Запись подтверждена" })).toBeVisible();
     await expect(
       page.getByText("11 ноября 2026 г. · 10:15–10:45 · Europe/Moscow", { exact: true }),
     ).toBeVisible();
     await expect(page.getByText("Анна · Anna@Example.com", { exact: true })).toBeVisible();
+    const successToast = page.getByRole("status", {
+      name: "Уведомление",
+      exact: true,
+    });
+    await expect(successToast).toContainText("Запись подтверждена");
+    await page.clock.fastForward(5500);
+    await expect(successToast).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Запись подтверждена" })).toBeVisible();
     const list = await fetch(`${backend.url}/api/bookings`).then((r) => r.json());
     expect(list.items).toEqual([
       expect.objectContaining({
@@ -104,6 +113,7 @@ test("a conflict after selection returns to fresh availability without losing gu
   await setup(async (backend, frontend) => {
     await createType(page, frontend);
     await choose(page, frontend);
+    await page.clock.install();
     const concurrent = await request.post(`${backend.url}/api/bookings`, {
       data: {
         meetingTypeId: "intro-30",
@@ -115,12 +125,39 @@ test("a conflict after selection returns to fresh availability without losing gu
     });
     expect(concurrent.status()).toBe(201);
     await page.getByRole("button", { name: "Подтвердить запись" }).click();
-    await expect(page.getByRole("alert")).toContainText("Это время уже заняли");
+    const notice = page.getByRole("alert");
+    await expect(notice).toContainText("Это время уже заняли");
+    await expect(notice.getByText("Выберите другое время", { exact: true })).toBeVisible();
+    await expect(notice).toContainText("Имя и email сохранены");
+    const toast = page.getByRole("status", { name: "Уведомление", exact: true });
+    await expect(toast).toBeVisible();
+    await expect(toast).toContainText("Это время уже заняли");
+    await expect(notice).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(notice).toHaveCSS("border-left-style", "solid");
+    const card = await page.locator(".booking-calendar-card").boundingBox();
+    const banner = await notice.boundingBox();
+    expect(Math.abs(banner.width - card.width)).toBeLessThan(2);
+    expect(banner.y + banner.height).toBeLessThanOrEqual(card.y);
+    await page.clock.fastForward(10000);
+    await expect(toast).toHaveCount(0);
+    await expect(notice).toBeVisible();
+    await page.getByRole("button", { name: "Назад", exact: true }).click();
+    await expect(notice).toContainText("Имя и email сохранены");
+    await page.getByRole("button", { name: "Выбрать Знакомство", exact: true }).click();
+    await expect(notice).toContainText("Это время уже заняли");
+    await expect(toast).toHaveCount(0);
     await expect(page.getByRole("button", { name: "10:00–10:30", exact: true })).toHaveCount(0);
     await page.getByRole("button", { name: "10:30–11:00", exact: true }).click();
+    await expect(notice).toHaveCount(0);
     await expect(page.getByLabel("Имя", { exact: true })).toHaveValue("Анна");
     await expect(page.getByLabel("Email", { exact: true })).toHaveValue("Anna@Example.com");
     await page.getByRole("button", { name: "Подтвердить запись" }).click();
+    await expect(page.getByRole("heading", { name: "Запись подтверждена" })).toBeVisible();
+    await expect(page.getByRole("status", { name: "Уведомление", exact: true })).toContainText(
+      "Запись подтверждена",
+    );
+    await page.getByRole("button", { name: "Закрыть уведомление", exact: true }).click();
+    await expect(page.getByRole("status", { name: "Уведомление", exact: true })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Запись подтверждена" })).toBeVisible();
     expect((await fetch(`${backend.url}/api/bookings`).then((r) => r.json())).items).toHaveLength(
       2,
@@ -152,6 +189,19 @@ test("real response loss retries the exact attempt after midnight without creati
       "Не удалось получить подтверждение. Запись могла создаться. Повторите отправку",
     );
     await backend.setTime("2026-11-10T21:00:00Z");
+    let availabilityReads = 0;
+    page.on("request", (request) => {
+      if (new URL(request.url()).pathname.endsWith("/slots")) availabilityReads += 1;
+    });
+    await page.clock.install();
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event("focus"));
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await page.clock.fastForward(60000);
+    await expect(page.getByRole("button", { name: "Повторить", exact: true })).toBeVisible();
+    expect(attempts).toHaveLength(1);
+    expect(availabilityReads).toBe(0);
     await page.getByLabel("Часовой пояс", { exact: true }).selectOption("UTC");
     await page.getByRole("button", { name: "Повторить", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Запись подтверждена" })).toBeVisible();

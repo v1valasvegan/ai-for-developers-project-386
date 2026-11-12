@@ -1,14 +1,24 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render as renderUI, screen } from "@testing-library/react";
+import { MantineProvider } from "@mantine/core";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, test } from "vitest";
 import { http, HttpResponse, bypass } from "msw";
 import { setupServer } from "msw/node";
 import BookingFlow from "./BookingFlow";
+import QueryProvider from "./QueryProvider";
 import { client } from "./api/generated/client.gen";
 import { startBackend, temporaryDatabase } from "../../tests/support/servers.mjs";
 import { prepareCatalogue } from "../../tests/support/catalogue-fixture.mjs";
+
+function render(ui) {
+  return renderUI(
+    <MantineProvider env="test" forceColorScheme="light">
+      <QueryProvider>{ui}</QueryProvider>
+    </MantineProvider>,
+  );
+}
 
 const link = "/book/intro-30?startsAt=2026-11-11T07:00:00Z";
 afterEach(() => {
@@ -157,7 +167,8 @@ test.each(["conflict", "midnight"])(
         reason === "conflict" ? "Это время уже заняли" : "Время вышло из окна записи",
       );
       expect(await screen.findByRole("heading", { name: "Выберите день и время" })).toBeVisible();
-      expect(screen.getByText("Выбранный тип: Знакомство · 30 минут")).toBeVisible();
+      expect(screen.getByRole("heading", { name: "Знакомство", exact: true })).toBeVisible();
+      expect(screen.getByText("◷ 30 минут")).toBeVisible();
       expect(window.location.search).toBe("");
       await guest.click(
         await screen.findByRole("button", {

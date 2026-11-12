@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "./queries";
 import { createBooking } from "./api/generated/sdk.gen";
 import type { ApiError, Booking, CreateBooking } from "./api/generated/types.gen";
 
@@ -24,6 +26,7 @@ export default function GuestDetails({
   setAttempt: (attempt: Attempt | null) => void;
   onUnavailable: (message: string) => void;
 }) {
+  const queryClient = useQueryClient();
   const pending = attempt?.status === "pending";
   const [error, setError] = useState<ApiError | null>(null);
   async function submit(event: React.SubmitEvent<HTMLFormElement>) {
@@ -36,11 +39,16 @@ export default function GuestDetails({
       idempotencyKey: crypto.randomUUID(),
     };
     setAttempt({ body, status: "pending" });
+    // Do not let a background GET remove the form while a POST outcome is uncertain.
+    void queryClient.cancelQueries({ queryKey: queryKeys.slots });
     setError(null);
     try {
       const { data } = await createBooking({ body, throwOnError: true });
       setAttempt(null);
       onSuccess(data);
+      // Occupancy belongs to the owner, so every type's availability is stale.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.slots });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bookings });
     } catch (failure) {
       const known =
         typeof failure === "object" && failure !== null && "code" in failure && "message" in failure

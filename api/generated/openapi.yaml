@@ -184,7 +184,7 @@ paths:
   /api/meeting-types/{id}/slots:
     get:
       operationId: listMeetingTypeSlots
-      description: Получить свободные слоты типа; просмотр ничего не резервирует.
+      description: Получить свободные слоты типа и обезличенные занятые интервалы; просмотр ничего не резервирует.
       parameters:
         - name: id
           in: path
@@ -447,6 +447,23 @@ components:
               description: Обсудим ваш вопрос
               durationMinutes: 30
       description: Каталог, отсортированный по коду типа встречи.
+    OccupiedInterval:
+      type: object
+      required:
+        - startsAt
+        - endsAt
+      properties:
+        startsAt:
+          type: string
+          format: date-time
+          description: Начало включительно, UTC.
+          example: '2026-11-11T11:00:00Z'
+        endsAt:
+          type: string
+          format: date-time
+          description: Окончание исключительно, UTC. Длительность не зависит от просматриваемого типа.
+          example: '2026-11-11T11:30:00Z'
+      description: Занятый интервал любого типа встречи, без данных гостя и идентификаторов записи.
     OwnerBooking:
       type: object
       required:
@@ -525,6 +542,14 @@ components:
           example:
             - startsAt: '2026-11-11T07:00:00Z'
               endsAt: '2026-11-11T07:30:00Z'
+        occupied:
+          type: array
+          items:
+            $ref: '#/components/schemas/OccupiedInterval'
+          description: Занятые интервалы всех типов, пересекающие окно, по возрастанию начала. Только границы времени; старые клиенты могут игнорировать поле.
+          example:
+            - startsAt: '2026-11-11T11:00:00Z'
+              endsAt: '2026-11-11T11:30:00Z'
       description: Доступность на всё актуальное окно, даже при пустом items.
 servers:
   - url: http://localhost:3000

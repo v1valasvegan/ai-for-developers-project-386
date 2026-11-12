@@ -164,6 +164,20 @@ export type MeetingTypeList = {
 };
 
 /**
+ * Занятый интервал любого типа встречи, без данных гостя и идентификаторов записи.
+ */
+export type OccupiedInterval = {
+    /**
+     * Начало включительно, UTC.
+     */
+    startsAt: string;
+    /**
+     * Окончание исключительно, UTC. Длительность не зависит от просматриваемого типа.
+     */
+    endsAt: string;
+};
+
+/**
  * Текущая или предстоящая встреча.
  */
 export type OwnerBooking = Booking & {
@@ -211,6 +225,10 @@ export type SlotList = {
      * Свободные слоты, отсортированные по началу.
      */
     items: Array<Slot>;
+    /**
+     * Занятые интервалы всех типов, пересекающие окно, по возрастанию начала. Только границы времени; старые клиенты могут игнорировать поле.
+     */
+    occupied?: Array<OccupiedInterval>;
 };
 
 export type ListBookingsData = {

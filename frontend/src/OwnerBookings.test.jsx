@@ -19,7 +19,7 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
 });
-async function seed(backend) {
+async function seed(backend, startsAt = "2026-11-11T07:00:00Z") {
   await fetch(`${backend.url}/api/meeting-types`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -35,7 +35,7 @@ async function seed(backend) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       meetingTypeId: "intro-30",
-      startsAt: "2026-11-11T07:00:00Z",
+      startsAt,
       name: "Анна",
       email: "anna@example.com",
       idempotencyKey: "00000000-0000-4000-8000-000000000019",
@@ -136,6 +136,37 @@ test("initial loading and failure offer retry; background failure keeps the real
   }
 });
 
+test.each(["meetings tab", "browser focus", "page visibility"])(
+  "a booking created by a guest appears immediately on returning to %s",
+  async (returnThrough) => {
+    await withOwner(
+      async (owner, backend) => {
+        expect(await screen.findByText("Пока нет текущих и предстоящих встреч")).toBeVisible();
+        if (returnThrough === "meetings tab") {
+          await owner.click(screen.getByRole("tab", { name: "Типы встреч" }));
+        }
+        await seed(backend, "2026-11-13T11:00:00Z");
+        const records = await fetch(`${backend.url}/api/bookings`).then((response) =>
+          response.json(),
+        );
+        expect(records.items).toEqual([
+          expect.objectContaining({ startsAt: "2026-11-13T11:00:00Z" }),
+        ]);
+        if (returnThrough === "meetings tab") {
+          await owner.click(screen.getByRole("tab", { name: "Встречи" }));
+        } else if (returnThrough === "browser focus") {
+          act(() => window.dispatchEvent(new Event("focus")));
+        } else {
+          act(() => document.dispatchEvent(new Event("visibilitychange")));
+        }
+        expect(await screen.findByText("Анна")).toBeVisible();
+        expect(screen.getByText("13 ноября 2026 г. · 14:00–14:30")).toBeVisible();
+      },
+      { seeded: false, beforeRender: (backend) => backend.setTime("2026-11-12T10:00:00Z") },
+    );
+  },
+);
+
 test("minute polling runs only for the visible active meetings tab", async () => {
   await withOwner(async (owner, backend) => {
     expect(await screen.findByText("Предстоящая")).toBeVisible();
@@ -151,9 +182,9 @@ test("minute polling runs only for the visible active meetings tab", async () =>
     await act(() => vi.advanceTimersByTimeAsync(120000));
     // Old list stays mounted while inactive; no poll can remove it.
     expect(screen.getByText("Анна")).toBeInTheDocument();
-    await owner.click(screen.getByRole("tab", { name: "Встречи" }));
     Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
     act(() => document.dispatchEvent(new Event("visibilitychange")));
+    await owner.click(screen.getByRole("tab", { name: "Встречи" }));
     await act(() => vi.advanceTimersByTimeAsync(120000));
     expect(screen.getByText("Анна")).toBeVisible();
     Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });

@@ -147,6 +147,16 @@ model Slot {
   endsAt: utcDateTime;
 }
 
+/** Занятый интервал любого типа встречи, без данных гостя и идентификаторов записи. */
+model OccupiedInterval {
+  /** Начало включительно, UTC. */
+  @example(utcDateTime.fromISO("2026-11-11T11:00:00Z"))
+  startsAt: utcDateTime;
+  /** Окончание исключительно, UTC. Длительность не зависит от просматриваемого типа. */
+  @example(utcDateTime.fromISO("2026-11-11T11:30:00Z"))
+  endsAt: utcDateTime;
+}
+
 /** Доступность на всё актуальное окно, даже при пустом items. */
 model SlotList {
   /** Серверное время расчёта. */
@@ -164,6 +174,9 @@ model SlotList {
   /** Свободные слоты, отсортированные по началу. */
   @example(#[#{ startsAt: utcDateTime.fromISO("2026-11-11T07:00:00Z"), endsAt: utcDateTime.fromISO("2026-11-11T07:30:00Z") }])
   items: Slot[];
+  /** Занятые интервалы всех типов, пересекающие окно, по возрастанию начала. Только границы времени; старые клиенты могут игнорировать поле. */
+  @example(#[#{ startsAt: utcDateTime.fromISO("2026-11-11T11:00:00Z"), endsAt: utcDateTime.fromISO("2026-11-11T11:30:00Z") }])
+  occupied?: OccupiedInterval[];
 }
 
 /** Указанный тип встречи не существует. */
@@ -173,7 +186,7 @@ model MeetingTypeNotFound {
   @body body: ApiError;
 }
 
-/** Получить свободные слоты типа; просмотр ничего не резервирует. */
+/** Получить свободные слоты типа и обезличенные занятые интервалы; просмотр ничего не резервирует. */
 @tag("Default")
 @opExample(#{ returnType: #{ serverTime: utcDateTime.fromISO("2026-11-10T12:00:00Z"), windowStart: utcDateTime.fromISO("2026-11-10T21:00:00Z"), windowEnd: utcDateTime.fromISO("2026-11-24T21:00:00Z"), timeZone: "Europe/Moscow", items: #[] } })
 @operationId("listMeetingTypeSlots")

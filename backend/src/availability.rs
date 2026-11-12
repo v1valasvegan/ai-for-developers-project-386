@@ -1,5 +1,5 @@
 use chrono::{DateTime, Datelike, Duration, FixedOffset, TimeZone, Utc, Weekday};
-use okoshko_api::models::{Slot, SlotList};
+use okoshko_api::models::{OccupiedInterval, Slot, SlotList};
 
 pub fn slots(now: DateTime<Utc>, duration_minutes: i32, occupied: &[(i64, i64)]) -> SlotList {
     // Europe/Moscow has a fixed UTC+03 offset throughout the supported booking window.
@@ -28,11 +28,26 @@ pub fn slots(now: DateTime<Utc>, duration_minutes: i32, occupied: &[(i64, i64)])
             items.push(Slot::new(start, end));
         }
     }
-    SlotList::new(
+    let window_start = midnight + Duration::days(1);
+    let window_end = midnight + Duration::days(15);
+    let mut intervals: Vec<_> = occupied
+        .iter()
+        .filter(|&&(start, end)| start < window_end.timestamp() && window_start.timestamp() < end)
+        .filter_map(|&(start, end)| {
+            Some(OccupiedInterval::new(
+                DateTime::from_timestamp(start, 0)?,
+                DateTime::from_timestamp(end, 0)?,
+            ))
+        })
+        .collect();
+    intervals.sort_by_key(|interval| (interval.starts_at, interval.ends_at));
+    let mut result = SlotList::new(
         now,
-        midnight + Duration::days(1),
-        midnight + Duration::days(15),
+        window_start,
+        window_end,
         "Europe/Moscow".to_owned(),
         items,
-    )
+    );
+    result.occupied = Some(intervals);
+    result
 }

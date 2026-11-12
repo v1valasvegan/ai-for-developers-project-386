@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { MantineProvider } from "@mantine/core";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, test } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
@@ -48,7 +48,8 @@ test("a guest chooses a type then a date and time, and Back requires a fresh tim
     );
     await guest.click(await screen.findByRole("button", { name: "Выбрать Знакомство" }));
     expect(await screen.findByRole("heading", { name: "Выберите день и время" })).toBeVisible();
-    expect(screen.getByText("Выбранный тип: Знакомство · 30 минут")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Знакомство", exact: true })).toBeVisible();
+    expect(screen.getByText("◷ 30 минут")).toBeVisible();
     expect(
       screen.queryByRole("button", { name: "Выбрать Разбор проекта" }),
     ).not.toBeInTheDocument();
@@ -72,6 +73,55 @@ test("a guest chooses a type then a date and time, and Back requires a fresh tim
     expect(await screen.findByRole("button", { name: "10:00–11:00" })).toBeVisible();
     expect(window.location.pathname).toBe("/book/review-60");
     expect(window.location.search).toBe("");
+  } finally {
+    await backend?.stop();
+    await database.cleanup();
+  }
+});
+
+test("the calendar shows a real occupied interval of another type without guest details, and keeps free adjacent time selectable", async () => {
+  const database = await temporaryDatabase();
+  let backend;
+  try {
+    await prepareCatalogue(database.path);
+    backend = await startBackend(database.path, { time: "2026-11-10T12:00:00Z" });
+    const response = await fetch(`${backend.url}/api/bookings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        meetingTypeId: "intro-30",
+        startsAt: "2026-11-11T11:00:00Z",
+        name: "Скрытый гость",
+        email: "private@example.com",
+        idempotencyKey: "00000000-0000-4000-8000-000000000033",
+      }),
+    });
+    expect(response.status).toBe(201);
+    client.setConfig({ baseUrl: backend.url });
+    window.history.replaceState(null, "", "/book/review-60");
+    render(
+      <MantineProvider env="test">
+        <App path="/book/review-60" />
+      </MantineProvider>,
+    );
+    const guest = userEvent.setup();
+    await screen.findByRole("heading", { name: "Выберите день и время" });
+    await guest.selectOptions(screen.getByLabelText("Часовой пояс"), "Europe/Moscow");
+    const calendar = screen.getByRole("table", { name: "Календарь записи" });
+    expect(
+      within(calendar)
+        .getAllByRole("columnheader")
+        .map((cell) => cell.textContent),
+    ).toEqual(["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]);
+    expect(screen.getByRole("button", { name: "14:00–14:30 · Занято" })).toBeDisabled();
+    expect(screen.queryByText("Скрытый гость")).not.toBeInTheDocument();
+    expect(screen.queryByText("private@example.com")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "14:00–15:00" })).not.toBeInTheDocument();
+    await guest.click(screen.getByRole("button", { name: "14:30–15:30" }));
+    expect(await screen.findByLabelText("Имя", { exact: true })).toHaveValue("");
+    expect(new URLSearchParams(window.location.search).get("startsAt")).toBe(
+      "2026-11-11T11:30:00Z",
+    );
   } finally {
     await backend?.stop();
     await database.cleanup();

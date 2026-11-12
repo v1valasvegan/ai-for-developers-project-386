@@ -60,6 +60,39 @@ test("guest creates a normalized booking and owner sees the server-calculated in
   });
 });
 
+test("guest availability exposes sorted occupied intervals across types without identity or guest data, only within the window", async () => {
+  await setup(async (backend) => {
+    await post(backend, "meeting-types", {
+      id: "other-60",
+      title: "Другой тип",
+      description: "Другой вопрос",
+      durationMinutes: 60,
+    });
+    for (const [meetingTypeId, startsAt, idempotencyKey] of [
+      ["other-60", "2026-11-24T11:00:00Z", "00000000-0000-4000-8000-000000000011"],
+      ["intro-30", "2026-11-11T11:00:00Z", "00000000-0000-4000-8000-000000000012"],
+    ]) {
+      expect(
+        (await post(backend, "bookings", { ...payload, meetingTypeId, startsAt, idempotencyKey }))
+          .status,
+      ).toBe(201);
+    }
+    const availability = await (
+      await fetch(`${backend.url}/api/meeting-types/intro-30/slots`)
+    ).json();
+    expect(availability.occupied).toEqual([
+      { startsAt: "2026-11-11T11:00:00Z", endsAt: "2026-11-11T11:30:00Z" },
+      { startsAt: "2026-11-24T11:00:00Z", endsAt: "2026-11-24T12:00:00Z" },
+    ]);
+    expect(availability.items.some((slot) => slot.startsAt === "2026-11-11T11:00:00Z")).toBe(false);
+    await backend.setTime("2026-11-23T12:00:00Z");
+    const shifted = await (await fetch(`${backend.url}/api/meeting-types/intro-30/slots`)).json();
+    expect(shifted.occupied).toEqual([
+      { startsAt: "2026-11-24T11:00:00Z", endsAt: "2026-11-24T12:00:00Z" },
+    ]);
+  });
+});
+
 test("invalid guest fields are inline, while other values remain valid", async () => {
   await setup(async (backend) => {
     for (const [field, value] of [

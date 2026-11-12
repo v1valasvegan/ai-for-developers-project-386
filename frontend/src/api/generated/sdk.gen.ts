@@ -59,6 +59,6 @@ export const createMeetingType = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
- * Получить свободные слоты типа; просмотр ничего не резервирует.
+ * Получить свободные слоты типа и обезличенные занятые интервалы; просмотр ничего не резервирует.
  */
 export const listMeetingTypeSlots = <ThrowOnError extends boolean = false>(options: Options<ListMeetingTypeSlotsData, ThrowOnError>): RequestResult<ListMeetingTypeSlotsResponses, ListMeetingTypeSlotsErrors, ThrowOnError> => (options.client ?? client).get<ListMeetingTypeSlotsResponses, ListMeetingTypeSlotsErrors, ThrowOnError>({ url: '/api/meeting-types/{id}/slots', ...options });

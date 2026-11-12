@@ -1,0 +1,74 @@
+.app-toast {
+  position: fixed;
+  top: calc(var(--header-height) + 12px);
+  right: 24px;
+  z-index: 1000;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 30px;
+  gap: 12px;
+  width: min(390px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid #635d51;
+  border-radius: 12px;
+  background: #34332d;
+  color: #fffaf1;
+  box-shadow: 0 8px 30px #29231730;
+  overflow-wrap: anywhere;
+  text-align: left;
+  font-family: inherit;
+}
+.app-toast strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.app-toast-message {
+  display: block;
+  margin: 5px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #e4dcce;
+}
+.app-toast-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ead2aa;
+  color: #64431d;
+  font-size: 15px;
+  font-weight: 700;
+}
+.app-toast-success .app-toast-icon {
+  background: #cfe2cb;
+  color: #385434;
+}
+.app-toast .app-toast-close {
+  width: 30px;
+  min-height: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #6d6659;
+  border-radius: 6px;
+  background: transparent;
+  color: #fffaf1;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 22px;
+  line-height: 1;
+}
+.app-toast .app-toast-close:hover {
+  background: #514c42;
+}
+.app-toast .app-toast-close:focus-visible {
+  outline: 2px solid #fffaf1;
+  outline-offset: 3px;
+}
+@media (max-width: 600px) {
+  .app-toast {
+    top: auto;
+    bottom: 16px;
+    right: 16px;
+  }
+}

@@ -1,0 +1,43 @@
+.booking-flow .booking-notice {
+  margin: 0 0 20px;
+  padding: 16px 18px;
+  border: 1px solid #dfb16f;
+  border-left: 4px solid #b97620;
+  border-radius: 9px;
+  background: #fff0d9;
+  color: #653d16;
+}
+.booking-notice .booking-notice-title {
+  color: #653d16;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.booking-notice .booking-notice-message {
+  color: #754b24;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.booking-notice .booking-notice-message p {
+  margin: 0;
+}
+.booking-notice .booking-notice-message p + p {
+  margin-top: 5px;
+}
+.booking-notice .booking-notice-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 23px;
+  height: 23px;
+  margin-top: 1px;
+  border: 1px solid #b97620;
+  border-radius: 50%;
+  color: #925514;
+  font-weight: 700;
+}
+@media (max-width: 600px) {
+  .booking-flow .booking-notice {
+    padding: 14px 12px;
+  }
+}

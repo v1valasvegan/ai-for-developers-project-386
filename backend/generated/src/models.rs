@@ -1285,6 +1285,132 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<MeetingTypeL
 
 
 
+/// Занятый интервал любого типа встречи, без данных гостя и идентификаторов записи.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
+#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
+pub struct OccupiedInterval {
+    /// Начало включительно, UTC.
+    #[serde(rename = "startsAt")]
+    pub starts_at: chrono::DateTime::<chrono::Utc>,
+
+    /// Окончание исключительно, UTC. Длительность не зависит от просматриваемого типа.
+    #[serde(rename = "endsAt")]
+    pub ends_at: chrono::DateTime::<chrono::Utc>,
+
+}
+
+
+
+impl OccupiedInterval {
+    #[allow(clippy::new_without_default, clippy::too_many_arguments)]
+    pub fn new(starts_at: chrono::DateTime::<chrono::Utc>, ends_at: chrono::DateTime::<chrono::Utc>, ) -> OccupiedInterval {
+        OccupiedInterval {
+ starts_at,
+ ends_at,
+        }
+    }
+}
+
+/// Converts the OccupiedInterval value to the Query Parameters representation (style=form, explode=false)
+/// specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde serializer
+impl std::fmt::Display for OccupiedInterval {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params: Vec<Option<String>> = vec![
+            // Skipping startsAt in query parameter serialization
+
+            // Skipping endsAt in query parameter serialization
+
+        ];
+
+        write!(f, "{}", params.into_iter().flatten().collect::<Vec<_>>().join(","))
+    }
+}
+
+/// Converts Query Parameters representation (style=form, explode=false) to a OccupiedInterval value
+/// as specified in https://swagger.io/docs/specification/serialization/
+/// Should be implemented in a serde deserializer
+impl std::str::FromStr for OccupiedInterval {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        /// An intermediate representation of the struct to use for parsing.
+        #[derive(Default)]
+        #[allow(dead_code)]
+        struct IntermediateRep {
+            pub starts_at: Vec<chrono::DateTime::<chrono::Utc>>,
+            pub ends_at: Vec<chrono::DateTime::<chrono::Utc>>,
+        }
+
+        let mut intermediate_rep = IntermediateRep::default();
+
+        // Parse into intermediate representation
+        let mut string_iter = s.split(',');
+        let mut key_result = string_iter.next();
+
+        while key_result.is_some() {
+            let val = match string_iter.next() {
+                Some(x) => x,
+                None => return std::result::Result::Err("Missing value while parsing OccupiedInterval".to_string())
+            };
+
+            if let Some(key) = key_result {
+                #[allow(clippy::match_single_binding)]
+                match key {
+                    #[allow(clippy::redundant_clone)]
+                    "startsAt" => intermediate_rep.starts_at.push(<chrono::DateTime::<chrono::Utc> as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    #[allow(clippy::redundant_clone)]
+                    "endsAt" => intermediate_rep.ends_at.push(<chrono::DateTime::<chrono::Utc> as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
+                    _ => return std::result::Result::Err("Unexpected key while parsing OccupiedInterval".to_string())
+                }
+            }
+
+            // Get the next key
+            key_result = string_iter.next();
+        }
+
+        // Use the intermediate representation to return the struct
+        std::result::Result::Ok(OccupiedInterval {
+            starts_at: intermediate_rep.starts_at.into_iter().next().ok_or_else(|| "startsAt missing in OccupiedInterval".to_string())?,
+            ends_at: intermediate_rep.ends_at.into_iter().next().ok_or_else(|| "endsAt missing in OccupiedInterval".to_string())?,
+        })
+    }
+}
+
+// Methods for converting between header::IntoHeaderValue<OccupiedInterval> and HeaderValue
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<header::IntoHeaderValue<OccupiedInterval>> for HeaderValue {
+    type Error = String;
+
+    fn try_from(hdr_value: header::IntoHeaderValue<OccupiedInterval>) -> std::result::Result<Self, Self::Error> {
+        let hdr_value = hdr_value.to_string();
+        match HeaderValue::from_str(&hdr_value) {
+             std::result::Result::Ok(value) => std::result::Result::Ok(value),
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Invalid header value for OccupiedInterval - value: {hdr_value} is invalid {e}"#))
+        }
+    }
+}
+
+#[cfg(feature = "server")]
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<OccupiedInterval> {
+    type Error = String;
+
+    fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
+        match hdr_value.to_str() {
+             std::result::Result::Ok(value) => {
+                    match <OccupiedInterval as std::str::FromStr>::from_str(value) {
+                        std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
+                        std::result::Result::Err(err) => std::result::Result::Err(format!(r#"Unable to convert header value '{value}' into OccupiedInterval - {err}"#))
+                    }
+             },
+             std::result::Result::Err(e) => std::result::Result::Err(format!(r#"Unable to convert header: {hdr_value:?} to string: {e}"#))
+        }
+    }
+}
+
+
+
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct OwnerBooking {
@@ -1645,6 +1771,12 @@ pub struct SlotList {
           #[validate(nested)]
     pub items: Vec<models::Slot>,
 
+    /// Занятые интервалы всех типов, пересекающие окно, по возрастанию начала. Только границы времени; старые клиенты могут игнорировать поле.
+    #[serde(rename = "occupied")]
+          #[validate(nested)]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub occupied: Option<Vec<models::OccupiedInterval>>,
+
 }
 
 
@@ -1658,6 +1790,7 @@ impl SlotList {
  window_end,
  time_zone,
  items,
+ occupied: None,
         }
     }
 }
@@ -1679,6 +1812,8 @@ impl std::fmt::Display for SlotList {
             Some(self.time_zone.to_string()),
 
             // Skipping items in query parameter serialization
+
+            // Skipping occupied in query parameter serialization
 
         ];
 
@@ -1702,6 +1837,7 @@ impl std::str::FromStr for SlotList {
             pub window_end: Vec<chrono::DateTime::<chrono::Utc>>,
             pub time_zone: Vec<String>,
             pub items: Vec<Vec<models::Slot>>,
+            pub occupied: Vec<Vec<models::OccupiedInterval>>,
         }
 
         let mut intermediate_rep = IntermediateRep::default();
@@ -1728,6 +1864,7 @@ impl std::str::FromStr for SlotList {
                     #[allow(clippy::redundant_clone)]
                     "timeZone" => intermediate_rep.time_zone.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     "items" => return std::result::Result::Err("Parsing a container in this style is not supported in SlotList".to_string()),
+                    "occupied" => return std::result::Result::Err("Parsing a container in this style is not supported in SlotList".to_string()),
                     _ => return std::result::Result::Err("Unexpected key while parsing SlotList".to_string())
                 }
             }
@@ -1743,6 +1880,7 @@ impl std::str::FromStr for SlotList {
             window_end: intermediate_rep.window_end.into_iter().next().ok_or_else(|| "windowEnd missing in SlotList".to_string())?,
             time_zone: intermediate_rep.time_zone.into_iter().next().ok_or_else(|| "timeZone missing in SlotList".to_string())?,
             items: intermediate_rep.items.into_iter().next().ok_or_else(|| "items missing in SlotList".to_string())?,
+            occupied: intermediate_rep.occupied.into_iter().next(),
         })
     }
 }

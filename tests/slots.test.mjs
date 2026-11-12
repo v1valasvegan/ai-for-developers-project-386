@@ -94,6 +94,7 @@ test("a known fully occupied type returns metadata and empty items; an unknown t
       windowEnd: "2026-11-24T21:00:00Z",
       timeZone: "Europe/Moscow",
       items: [],
+      occupied: [{ startsAt: "2026-11-10T21:00:00Z", endsAt: "2026-11-24T21:00:00Z" }],
     });
     const missing = await fetch(`${backend.url}/api/meeting-types/missing/slots`);
     expect(missing.status).toBe(404);

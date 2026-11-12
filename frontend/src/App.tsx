@@ -2,6 +2,7 @@ import { Container } from "@mantine/core";
 import "./App.css";
 import BookingFlow from "./BookingFlow";
 import Owner from "./Owner";
+import QueryProvider from "./QueryProvider";
 
 const steps = [
   {
@@ -185,11 +186,8 @@ function BookingCatalogue({ path }: { path: string }) {
             Скоро откроемся
           </span>
         </header>
-        <main className="booking-catalogue" aria-labelledby="booking-title">
+        <main className="booking-catalogue" aria-label="Запись на встречу">
           <div className="hero-copy">
-            <p className="eyebrow">Страница записи</p>
-            <h1 id="booking-title">Типы встреч</h1>
-            <p className="hero-description">Начните с типа встречи или свободного времени.</p>
             <BookingFlow path={path} />
             <div className="hero-actions">
               <a className="page-link" href="/">
@@ -204,6 +202,14 @@ function BookingCatalogue({ path }: { path: string }) {
 }
 
 export default function App({ path = "/" }: { path?: string }) {
+  return (
+    <QueryProvider>
+      <AppRoutes path={path} />
+    </QueryProvider>
+  );
+}
+
+function AppRoutes({ path }: { path: string }) {
   if (path === "/book" || path.startsWith("/book/")) return <BookingCatalogue path={path} />;
   if (path === "/owner" || path === "/owner/") return <Owner />;
   return (

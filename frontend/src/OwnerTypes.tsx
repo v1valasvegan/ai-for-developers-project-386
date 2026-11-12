@@ -1,5 +1,8 @@
 import { useState } from "react";
+import Toast from "./Toast";
 import { TextInput, Textarea } from "@mantine/core";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "./queries";
 import Catalogue from "./Catalogue";
 import { createMeetingType } from "./api/generated/sdk.gen";
 import type { ApiError } from "./api/generated/types.gen";
@@ -10,8 +13,8 @@ export default function OwnerTypes() {
   const [form, setForm] = useState(emptyForm);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<ApiError>();
-  const [created, setCreated] = useState(false);
-  const [catalogueVersion, setCatalogueVersion] = useState(0);
+  const [created, setCreated] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const fieldErrors =
     error?.code === "meeting_type_exists"
       ? { id: "Этот код уже используется. Выберите другой" }
@@ -28,15 +31,15 @@ export default function OwnerTypes() {
     event.preventDefault();
     setPending(true);
     setError(undefined);
-    setCreated(false);
+    setCreated(null);
     try {
       const { data, error: failure } = await createMeetingType({
         body: { ...form, durationMinutes: Number(form.durationMinutes) },
       });
       if (data) {
         setForm(emptyForm);
-        setCreated(true);
-        setCatalogueVersion((version) => version + 1);
+        setCreated(data.id);
+        void queryClient.invalidateQueries({ queryKey: queryKeys.types });
       } else {
         setError(failure);
       }
@@ -53,7 +56,7 @@ export default function OwnerTypes() {
   return (
     <>
       <h2>Типы встреч</h2>
-      <Catalogue key={catalogueVersion} showCode />
+      <Catalogue showCode />
       <form className="type-form" onSubmit={(event) => void submit(event)} noValidate>
         <h2>Создать тип встречи</h2>
         <TextInput
@@ -101,7 +104,14 @@ export default function OwnerTypes() {
           {pending ? "Создаём…" : "Создать тип встречи"}
         </button>
       </form>
-      {created ? <output className="owner-toast">Тип встречи создан</output> : null}
+      {created ? (
+        <Toast
+          key={created}
+          tone="success"
+          title="Тип встречи создан"
+          message="Теперь его можно выбрать при записи."
+        />
+      ) : null}
     </>
   );
 }

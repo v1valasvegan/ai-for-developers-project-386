@@ -1,67 +1,25 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Container } from "@mantine/core";
+import { useDocumentVisibility } from "@mantine/hooks";
 import OwnerTypes from "./OwnerTypes";
-import { listBookings } from "./api/generated/sdk.gen";
-import type { BookingList } from "./api/generated/types.gen";
+import ScrollRegion from "./ScrollRegion";
+import { bookingsQuery } from "./queries";
 
 export default function Owner() {
   const [tab, setTab] = useState("meetings");
-  const [list, setList] = useState<BookingList>();
-  const [error, setError] = useState(false);
-  const [pending, setPending] = useState(true);
-  const request = useRef<AbortController | null>(null);
-
-  const refresh = useCallback(() => {
-    if (request.current) return;
-    const controller = new AbortController();
-    request.current = controller;
-    return listBookings({ signal: controller.signal })
-      .then(({ data }) => {
-        if (controller.signal.aborted) return;
-        if (data) {
-          setList(data);
-          setError(false);
-        } else setError(true);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setError(true);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setPending(false);
-        if (request.current === controller) request.current = null;
-      });
-  }, []);
+  const visibility = useDocumentVisibility();
+  const query = useQuery({
+    ...bookingsQuery,
+    enabled: tab === "meetings" && visibility === "visible",
+  });
+  const list = query.data;
+  const error = query.isError;
+  const pending = query.isFetching;
 
   function manualRefresh() {
-    if (request.current) return;
-    setPending(true);
-    void refresh();
+    if (!pending) void query.refetch({ cancelRefetch: false });
   }
-
-  useEffect(() => {
-    void refresh();
-    return () => {
-      request.current?.abort();
-      request.current = null;
-    };
-  }, [refresh]);
-
-  useEffect(() => {
-    if (tab !== "meetings") return;
-    let interval: ReturnType<typeof setInterval> | undefined;
-    function updatePolling() {
-      clearInterval(interval);
-      if (document.visibilityState === "visible") {
-        interval = setInterval(() => void refresh(), 60000);
-      }
-    }
-    updatePolling();
-    document.addEventListener("visibilitychange", updatePolling);
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", updatePolling);
-    };
-  }, [tab, refresh]);
 
   function navigateTabs(event: React.KeyboardEvent<HTMLButtonElement>) {
     let next: string;
@@ -140,39 +98,47 @@ export default function Owner() {
               </p>
             ) : null}
             {list ? (
-              <ul className="owner-bookings" aria-label="Текущие и предстоящие встречи">
-                {list.items.map((booking) => (
-                  <li
-                    key={booking.id}
-                    className={booking.status === "ongoing" ? "ongoing-booking" : undefined}
-                  >
-                    <h3>{booking.meetingTypeTitle}</h3>
-                    <p>
-                      {new Intl.DateTimeFormat("ru-RU", {
-                        timeZone: "Europe/Moscow",
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      }).format(new Date(booking.startsAt))}{" "}
-                      ·{" "}
-                      {new Intl.DateTimeFormat("ru-RU", {
-                        timeZone: "Europe/Moscow",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }).format(new Date(booking.startsAt))}
-                      –
-                      {new Intl.DateTimeFormat("ru-RU", {
-                        timeZone: "Europe/Moscow",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }).format(new Date(booking.endsAt))}
-                    </p>
-                    <p>{booking.name}</p>
-                    <p>{booking.email}</p>
-                    <strong>{booking.status === "ongoing" ? "Идёт сейчас" : "Предстоящая"}</strong>
-                  </li>
-                ))}
-              </ul>
+              <ScrollRegion label="Прокрутка встреч" maxHeight="min(60svh, 36rem)">
+                <ul className="owner-bookings" aria-label="Текущие и предстоящие встречи">
+                  {list.items.map((booking) => (
+                    <li
+                      key={booking.id}
+                      className={booking.status === "ongoing" ? "ongoing-booking" : undefined}
+                    >
+                      <div className="booking-summary">
+                        <h3>{booking.meetingTypeTitle}</h3>
+                        <p>
+                          {new Intl.DateTimeFormat("ru-RU", {
+                            timeZone: "Europe/Moscow",
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          }).format(new Date(booking.startsAt))}{" "}
+                          ·{" "}
+                          {new Intl.DateTimeFormat("ru-RU", {
+                            timeZone: "Europe/Moscow",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }).format(new Date(booking.startsAt))}
+                          –
+                          {new Intl.DateTimeFormat("ru-RU", {
+                            timeZone: "Europe/Moscow",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }).format(new Date(booking.endsAt))}
+                        </p>
+                      </div>
+                      <div className="booking-contact">
+                        <p>{booking.name}</p>
+                        <p>{booking.email}</p>
+                      </div>
+                      <strong>
+                        {booking.status === "ongoing" ? "Идёт сейчас" : "Предстоящая"}
+                      </strong>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollRegion>
             ) : null}
             {list?.items.length === 0 ? <p>Пока нет текущих и предстоящих встреч</p> : null}
           </section>

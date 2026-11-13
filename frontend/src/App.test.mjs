@@ -8,7 +8,7 @@ function renderLanding(path = "/") {
   return renderToStaticMarkup(createElement(MantineProvider, {}, createElement(App, { path })));
 }
 
-test("landing explains the future guest journey without internal product constraints", () => {
+test("landing explains the available guest journey and public demo limitations", () => {
   const html = renderLanding();
   const text = html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
   expect(text).toContain("для вашего звонка");
@@ -21,8 +21,12 @@ test("landing explains the future guest journey without internal product constra
   expect(text).toContain("подтвердите запись");
   expect(text).toContain("Без регистрации");
   expect(text).toContain("14 календарных дней");
-  expect(text).toContain("Сервис ещё в разработке");
-  expect(text).toContain("Это пример, записаться пока нельзя");
+  expect(text).toContain("Учебное демо");
+  expect(text).toContain("Страница владельца публична");
+  expect(text).toContain("вымышленные имя и email");
+  expect(text).not.toMatch(
+    /скоро откроемся|в разработке|записаться пока нельзя|запись пока недоступна|запись будет доступна|будущей страницы/iu,
+  );
   expect(html).toContain('src="/window-crown.svg"');
   expect(text).not.toMatch(/Поделитесь своим окошком|Анна Смирнова|Психолог|Google Meet|Zoom/);
 });
@@ -42,6 +46,16 @@ test.each(["/book", "/book/"])(
   },
 );
 
+test.each(["/book", "/book/", "/book/intro-30"])(
+  "guest screen at %s identifies the demo without announcing a future launch",
+  (path) => {
+    const html = renderLanding(path);
+    expect(html).toContain("Учебное демо");
+    expect(html).toContain("вымышленные имя и email");
+    expect(html).not.toMatch(/скоро откроемся|в разработке/iu);
+  },
+);
+
 test("schedule example contains a complete month and available times", () => {
   const html = renderLanding();
   const calendar = html.match(/<table\b[\s\S]*?<\/table>/)?.[0];
@@ -56,7 +70,8 @@ test("schedule example contains a complete month and available times", () => {
   for (const time of ["10:00", "11:00", "12:30", "14:00", "16:00"]) {
     expect(html).toContain(time);
   }
-  expect(html).toContain("Это пример, записаться пока нельзя.");
+  expect(html).toContain("Пример интерфейса");
+  expect(html).toContain("Актуальные даты и свободное время — на странице записи.");
 });
 
 test("illustration marks availability only inside its stated 14-day window", () => {

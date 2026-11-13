@@ -29,6 +29,37 @@ async function createType(request, backend, index) {
   expect(response.status()).toBe(201);
 }
 
+test("landing describes the live demo and leads to booking without future-launch notices", async ({
+  page,
+}) => {
+  await setup(async (_backend, frontend) => {
+    await page.goto(frontend.url);
+    await expect(page.getByText("Учебное демо", { exact: true })).toBeVisible();
+    await expect(page.getByRole("complementary", { name: "Статус сервиса" })).toContainText(
+      "Страница владельца публична",
+    );
+    await expect(page.getByRole("figure")).toContainText("Пример интерфейса");
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+      "content",
+      /Учебное демо/,
+    );
+    await expect(page.locator("body")).not.toContainText(
+      /скоро откроемся|в разработке|записаться пока нельзя|запись пока недоступна|запись будет доступна/iu,
+    );
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.getByRole("link", { name: "Перейти к записи", exact: true }).click();
+    await expect(page).toHaveURL(/\/book$/);
+    await expect(page.getByText("Учебное демо", { exact: true })).toBeVisible();
+    await expect(page.getByText("Используйте только вымышленные имя и email.")).toBeVisible();
+    await expect(page.locator("body")).not.toContainText(/скоро откроемся|в разработке/iu);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });
+});
+
 test("compact catalogue separates actions, styles the selector and keeps Back and header visible", async ({
   page,
   request,

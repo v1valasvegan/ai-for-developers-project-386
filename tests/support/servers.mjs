@@ -13,7 +13,7 @@ export async function temporaryDatabase() {
   };
 }
 
-async function freePort() {
+export async function freePort() {
   const server = createServer();
   server.listen(0, "127.0.0.1");
   try {
@@ -32,13 +32,13 @@ async function startServer(command, args, env, readyPattern) {
     stdio: ["ignore", "pipe", "pipe"],
   });
   let logs = "";
-  const stop = async () => {
+  const stop = async (signal = "SIGINT") => {
     if (!child.pid || child.exitCode !== null || child.signalCode !== null) return;
     const exited = once(child, "exit");
-    child.kill("SIGINT");
+    child.kill(signal);
     const timeout = setTimeout(() => child.kill("SIGKILL"), 3000);
     try {
-      await exited;
+      return await exited;
     } finally {
       clearTimeout(timeout);
     }
@@ -93,7 +93,7 @@ export async function startFrontend(backendUrl) {
   return { ...server, url: `http://127.0.0.1:${port}` };
 }
 
-export async function startBackend(databasePath, { time } = {}) {
+export async function startBackend(databasePath, { time, env = {} } = {}) {
   const clockFile = `${databasePath}.clock`;
   if (time) await writeFile(clockFile, time);
   const server = await startServer(
@@ -101,15 +101,20 @@ export async function startBackend(databasePath, { time } = {}) {
     [],
     {
       BIND_ADDR: "127.0.0.1:0",
+      PORT: undefined,
+      STATIC_DIR: undefined,
       DATABASE_PATH: databasePath,
       OKOSHKO_TEST_CLOCK_FILE: time ? clockFile : "",
+      ...env,
     },
-    /Окошко API: http:\/\/127\.0\.0\.1:\d+/,
+    /Окошко API: http:\/\/(?:127\.0\.0\.1|0\.0\.0\.0):\d+/,
   );
   // The backend chooses its own available port and reports it on stdout.
   return {
     ...server,
-    url: server.logs.match(/http:\/\/127\.0\.0\.1:\d+/)[0],
+    url: server.logs
+      .match(/http:\/\/(?:127\.0\.0\.1|0\.0\.0\.0):\d+/)[0]
+      .replace("0.0.0.0", "127.0.0.1"),
     setTime: (value) => writeFile(clockFile, value),
   };
 }

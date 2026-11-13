@@ -226,9 +226,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Err(error) = storage::initialize(&database_path) {
         eprintln!("Storage initialization failed: {error}");
     }
-    let address = std::env::var("BIND_ADDR").unwrap_or_else(|_| "127.0.0.1:3000".to_owned());
-    let listener = tokio::net::TcpListener::bind(&address).await?;
-    println!("Окошко API: http://{}", listener.local_addr()?);
+    let address = match std::env::var("PORT") {
+        Ok(port) => format!("0.0.0.0:{}", port.parse::<std::num::NonZeroU16>()?),
+        Err(std::env::VarError::NotPresent) => {
+            std::env::var("BIND_ADDR").unwrap_or_else(|_| "127.0.0.1:3000".to_owned())
+        }
+        Err(error) => return Err(error.into()),
+    };
     let app = okoshko_api::server::new(Arc::new(Api {
         database_path,
         clock: clock::Clock::configured(),
@@ -236,8 +240,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .layer(axum::middleware::from_fn(
         request_validation::validate_creation_json,
     ));
+    let app = if let Ok(directory) = std::env::var("STATIC_DIR") {
+        let directory = PathBuf::from(directory);
+        std::fs::metadata(directory.join("index.html"))?;
+        let index = tower_http::services::ServeFile::new(directory.join("index.html"));
+        let mut pages = axum::Router::new();
+        for path in ["/book", "/book/", "/book/{*path}", "/owner", "/owner/"] {
+            pages = pages.route(path, axum::routing::get_service(index.clone()));
+        }
+        app.fallback_service(tower_http::services::ServeDir::new(directory).fallback(pages))
+    } else {
+        app
+    };
+    #[cfg(unix)]
+    let mut interrupt = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())?;
+    #[cfg(unix)]
+    let mut terminate = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
+    let listener = tokio::net::TcpListener::bind(&address).await?;
+    println!("Окошко API: http://{}", listener.local_addr()?);
     axum::serve(listener, app)
-        .with_graceful_shutdown(async {
+        .with_graceful_shutdown(async move {
+            #[cfg(unix)]
+            tokio::select! {
+                _ = interrupt.recv() => {},
+                _ = terminate.recv() => {},
+            }
+            #[cfg(not(unix))]
             if let Err(error) = tokio::signal::ctrl_c().await {
                 eprintln!("Не удалось установить обработчик завершения: {error}");
             }

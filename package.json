@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "api:generate": "node scripts/generate.mjs",
-    "lint": "oxlint --deny-warnings frontend/src frontend/vite.config.ts scripts tests openapi-ts.config.ts playwright.config.mjs commitlint.config.js",
+    "lint": "oxlint --deny-warnings frontend/src frontend/vite.config.ts scripts tests openapi-ts.config.ts playwright.config.mjs playwright.deploy.config.mjs commitlint.config.js",
     "format:check": "oxfmt --ignore-path .gitignore --ignore-path .oxfmtignore --check .",
     "format": "oxfmt --ignore-path .gitignore --ignore-path .oxfmtignore .",
     "typecheck": "npm run typecheck --workspace frontend",
@@ -16,6 +16,7 @@
     "build": "npm run build --workspace frontend",
     "test": "vitest run && npm run test:browser",
     "test:browser": "playwright test",
+    "test:deploy": "playwright test --config=playwright.deploy.config.mjs",
     "commitlint": "node scripts/check-commits.mjs"
   },
   "devDependencies": {

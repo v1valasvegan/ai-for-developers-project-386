@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "railway": {
+      "command": "railway",
+      "args": ["mcp", "local"],
+      "description": "Railway: сервис, деплой, постоянный том, домен и диагностика учебного Окошка. Платные действия требуют отдельного согласия.",
+      "exposure": "deferred"
+    }
+  }
+}

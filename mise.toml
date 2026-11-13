@@ -57,7 +57,13 @@ run = [
   "npm run commitlint",
   "mise run test",
   "mise run security",
+  "shellcheck scripts/docker-entrypoint.sh",
+  "mise run docker:check",
 ]
+
+[tasks."docker:check"]
+description = "Build the production image and verify real booking, PORT and volume persistence"
+run = "node scripts/check-docker.mjs"
 
 [tasks.security]
 description = "Scan secrets and dependency vulnerabilities (network required)"

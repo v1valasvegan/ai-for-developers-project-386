@@ -7,7 +7,7 @@ steps {
     check = "npx --no-install oxfmt --ignore-path .gitignore --ignore-path .oxfmtignore --check {{files}}"
   }
   ["oxlint"] {
-    glob = List("frontend/src/**/*.tsx", "frontend/src/**/*.ts", "frontend/src/**/*.jsx", "frontend/vite.config.ts", "scripts/*.mjs", "tests/**/*.mjs", "openapi-ts.config.ts", "playwright.config.mjs", "commitlint.config.js")
+    glob = List("frontend/src/**/*.tsx", "frontend/src/**/*.ts", "frontend/src/**/*.jsx", "frontend/vite.config.ts", "scripts/*.mjs", "tests/**/*.mjs", "openapi-ts.config.ts", "playwright*.config.mjs", "commitlint.config.js")
     exclude = List("frontend/src/api/generated/**")
     check = "npx --no-install oxlint --deny-warnings {{files}}"
   }

@@ -29,7 +29,10 @@ test("one server serves the built SPA, deep links, assets and real API without H
       const response = await fetch(`${server.url}${path}`);
       expect(response.status, path).toBe(200);
       expect(response.headers.get("content-type"), path).toContain("text/html");
-      expect(await response.text(), path).toBe(index);
+      const html = await response.text();
+      expect(html, path).toBe(index);
+      expect(html, path).toContain("Учебное демо");
+      expect(html, path).not.toMatch(/сервис в разработке|скоро откроемся/iu);
     }
     const asset = index.match(/src="(\/assets\/[^"]+\.js)"/)[1];
     const response = await fetch(`${server.url}${asset}`);

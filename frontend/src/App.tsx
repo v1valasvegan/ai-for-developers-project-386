@@ -15,13 +15,13 @@ const steps = [
     number: "02",
     title: "Выберите день и время",
     description:
-      "Запись будет доступна на ближайшие 14 календарных дней. Свободные окошки зависят от длительности выбранной встречи.",
+      "Выберите свободное время на ближайшие 14 календарных дней. Доступность зависит от длительности выбранной встречи.",
   },
   {
     number: "03",
     title: "Укажите имя и email",
     description:
-      "Проверьте выбранное время и подтвердите запись. Создавать аккаунт или входить в личный кабинет не понадобится.",
+      "Проверьте выбранное время и подтвердите запись. Регистрация и вход в личный кабинет не нужны.",
   },
 ];
 
@@ -51,7 +51,7 @@ function SchedulePreview() {
           <span className="preview-address">
             <WindowMark /> окошко / пример
           </span>
-          <span className="preview-example">Пример страницы записи</span>
+          <span className="preview-example">Пример интерфейса</span>
         </div>
         <div className="schedule-preview">
           <div className="specialist-panel">
@@ -152,16 +152,16 @@ function SchedulePreview() {
               ))}
             </div>
             <p className="times-note">
-              В этом примере выбрано время.
+              Это иллюстрация календаря.
               <br />
-              Настоящая запись пока недоступна.
+              Выберите время на странице записи.
             </p>
           </div>
         </div>
       </div>
       <figcaption>
-        <span aria-hidden="true">✳</span> Так может выглядеть страница записи. Это пример,
-        записаться пока нельзя.
+        <span aria-hidden="true">✳</span> Пример интерфейса. Актуальные даты и свободное время — на
+        странице записи.
       </figcaption>
     </figure>
   );
@@ -183,7 +183,7 @@ function BookingCatalogue({ path }: { path: string }) {
           </nav>
           <span className="development-status">
             <span />
-            Скоро откроемся
+            Учебное демо
           </span>
         </header>
         <main className="booking-catalogue" aria-label="Запись на встречу">
@@ -193,6 +193,7 @@ function BookingCatalogue({ path }: { path: string }) {
               <a className="page-link" href="/">
                 Вернуться на главную
               </a>
+              <p>Используйте только вымышленные имя и email.</p>
             </div>
           </div>
         </main>
@@ -231,7 +232,7 @@ function AppRoutes({ path }: { path: string }) {
           </nav>
           <span className="development-status">
             <span />
-            Скоро откроемся
+            Учебное демо
           </span>
         </header>
 
@@ -251,13 +252,13 @@ function AppRoutes({ path }: { path: string }) {
               </h1>
               <p className="hero-description">
                 Простой сервис записи на звонок. Выберите тип встречи, найдите свободное время и
-                оставьте свои данные. Без регистрации и лишней переписки.
+                подтвердите запись. Без регистрации и лишней переписки.
               </p>
               <div className="hero-actions">
                 <a className="page-link" href="/book">
                   Перейти к записи
                 </a>
-                <p>Страница записи пока в разработке.</p>
+                <p>Учебное демо: используйте только вымышленные данные.</p>
               </div>
             </div>
             <SchedulePreview />
@@ -297,8 +298,8 @@ function AppRoutes({ path }: { path: string }) {
               ↗
             </span>
             <p>
-              <strong>Пока приоткрываем ставни.</strong> Сервис ещё в разработке. Здесь — наша идея
-              и пример будущей страницы записи.
+              <strong>Учебное демо.</strong> Страница владельца публична — используйте только
+              вымышленные имя и email.
             </p>
           </aside>
         </main>

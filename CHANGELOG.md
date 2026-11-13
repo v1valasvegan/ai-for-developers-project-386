@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/v1valasvegan/ai-for-developers-project-386/compare/v0.2.0...v0.3.0) (2026-11-13)
+
+
+### Features
+
+* упаковать и развернуть Окошко ([#29](https://github.com/v1valasvegan/ai-for-developers-project-386/issues/29)) ([c0503b8](https://github.com/v1valasvegan/ai-for-developers-project-386/commit/c0503b829b4137cc5bc47d2520cc29e42d4560b4))
+* упаковать приложение в Docker ([#27](https://github.com/v1valasvegan/ai-for-developers-project-386/issues/27)) ([4fa6ac8](https://github.com/v1valasvegan/ai-for-developers-project-386/commit/4fa6ac8ef1157970d16c9744baad3b6f9bc17557))
+
+
+### Bug Fixes
+
+* обновить ammonia после нового advisory ([#27](https://github.com/v1valasvegan/ai-for-developers-project-386/issues/27)) ([77a78d8](https://github.com/v1valasvegan/ai-for-developers-project-386/commit/77a78d89938f9ccac4f92b318d760e2e23a1873c))
+* сохранить generated-код при загрузке в Railway ([#28](https://github.com/v1valasvegan/ai-for-developers-project-386/issues/28)) ([47f1c00](https://github.com/v1valasvegan/ai-for-developers-project-386/commit/47f1c006399bc189903516c30ae95074391aae93))
+
 ## [0.2.0](https://github.com/v1valasvegan/ai-for-developers-project-386/compare/v0.1.0...v0.2.0) (2026-11-13)
 
 ### Features

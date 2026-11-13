@@ -1,0 +1,21 @@
+# Сохранить закоммиченные API-артефакты в контексте CLI/MCP.
+!backend/generated/
+!backend/generated/**
+!frontend/src/api/generated/
+!frontend/src/api/generated/**
+.git
+.pi
+.agents
+.railway
+.env*
+**/.env*
+**/node_modules
+**/target
+**/dist
+**/*.sqlite*
+**/*.db
+**/*.log
+.cache
+data
+playwright-report
+test-results

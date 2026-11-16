@@ -8,7 +8,7 @@
   --muted: #68685e;
   --red: #b83c2e;
   --line: #deddd3;
-  --header-height: 104px;
+  --header-height: 72px;
 }
 html {
   scroll-behavior: smooth;
@@ -69,11 +69,14 @@ a:focus-visible {
   z-index: 30;
   background: var(--paper);
   min-height: var(--header-height);
+  border-bottom: 1px solid var(--line);
+}
+.header-content {
+  min-height: calc(var(--header-height) - 1px);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 28px;
-  border-bottom: 1px solid var(--line);
 }
 .wordmark {
   display: inline-flex;
@@ -793,7 +796,7 @@ p {
 }
 @media (max-width: 800px) {
   :root {
-    --header-height: 90px;
+    --header-height: 64px;
   }
   .catalogue-list li {
     grid-template-columns: minmax(0, 1fr);
@@ -886,7 +889,7 @@ p {
 }
 @media (max-width: 520px) {
   :root {
-    --header-height: 124px;
+    --header-height: 104px;
   }
   .booking-order-actions > button {
     flex: 1 1 100%;
@@ -897,10 +900,10 @@ p {
   .page-container {
     padding-inline: 22px;
   }
-  .site-header {
-    gap: 12px;
+  .header-content {
+    gap: 8px;
     flex-wrap: wrap;
-    padding-block: 22px 15px;
+    padding-block: 10px;
   }
   .header-nav {
     order: 3;

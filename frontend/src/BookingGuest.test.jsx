@@ -97,6 +97,36 @@ test.each(["2026-11-11T07:00:00Z", "2026-11-11T10:00:00+03:00"])(
   },
 );
 
+test.each(["Имя", "Email"])(
+  "typing in %s dismisses its error, not the other field, without live validation",
+  async (label) => {
+    await setup(async (_backend, guest) => {
+      render(<BookingFlow path="/book/intro-30" />);
+      const name = await screen.findByLabelText("Имя");
+      const email = screen.getByLabelText("Email");
+      await guest.type(email, "bad");
+      await guest.click(screen.getByRole("button", { name: "Подтвердить запись" }));
+      await screen.findByText("Укажите имя от 1 до 120 символов");
+      expect(name).toHaveAttribute("aria-invalid", "true");
+      expect(email).toHaveAttribute("aria-invalid", "true");
+      const edited = label === "Имя" ? name : email;
+      const other = label === "Имя" ? email : name;
+      await guest.type(edited, label === "Имя" ? " " : "x");
+      expect(edited).not.toHaveAttribute("aria-invalid", "true");
+      expect(edited).not.toHaveAttribute("aria-describedby");
+      expect(other).toHaveAttribute("aria-invalid", "true");
+      expect(screen.getByRole("alert")).toBeVisible();
+      await guest.type(other, label === "Имя" ? "x" : " ");
+      expect(other).not.toHaveAttribute("aria-invalid", "true");
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      await guest.click(screen.getByRole("button", { name: "Подтвердить запись" }));
+      await screen.findByText("Укажите имя от 1 до 120 символов");
+      expect(name).toHaveAttribute("aria-invalid", "true");
+      expect(email).toHaveAttribute("aria-invalid", "true");
+    });
+  },
+);
+
 test.each(["2026-11-11T07:00:00Z", "2026-11-11T10:00:00+03:00"])(
   "lost confirmation preserves an immutable in-memory attempt for retry with no duplicate: %s",
   async (startsAt) => {

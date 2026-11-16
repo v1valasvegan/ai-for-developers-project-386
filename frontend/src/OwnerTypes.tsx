@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Toast from "./Toast";
+import { dismissFieldError } from "./formErrors";
 import { TextInput, Textarea } from "@mantine/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "./queries";
@@ -14,6 +15,7 @@ export default function OwnerTypes() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<ApiError>();
   const [created, setCreated] = useState<string | null>(null);
+  const editedFields = useRef(new Set<keyof typeof emptyForm>());
   const queryClient = useQueryClient();
   const fieldErrors =
     error?.code === "meeting_type_exists"
@@ -27,8 +29,17 @@ export default function OwnerTypes() {
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 
+  function changeField(field: keyof typeof emptyForm, value: string) {
+    editedFields.current.add(field);
+    setForm((current) => ({ ...current, [field]: value }));
+    setError((current) => dismissFieldError(current, field));
+  }
+
   async function submit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) return;
+    const changedDuringRequest = new Set<keyof typeof emptyForm>();
+    editedFields.current = changedDuringRequest;
     setPending(true);
     setError(undefined);
     setCreated(null);
@@ -41,7 +52,11 @@ export default function OwnerTypes() {
         setCreated(data.id);
         void queryClient.invalidateQueries({ queryKey: queryKeys.types });
       } else {
-        setError(failure);
+        let currentError: ApiError | undefined = failure;
+        for (const field of changedDuringRequest) {
+          currentError = dismissFieldError(currentError, field);
+        }
+        setError(currentError);
       }
     } catch {
       setError({
@@ -65,7 +80,7 @@ export default function OwnerTypes() {
           value={form.id}
           error={fieldErrors?.id}
           description="От 3 до 20 символов: латинские буквы, цифры и дефис. Например, intro-30"
-          onChange={(event) => setForm({ ...form, id: event.currentTarget.value })}
+          onChange={(event) => changeField("id", event.currentTarget.value)}
         />
         <p className="code-preview">Будет сохранён код: {normalizedCode || "—"}</p>
         <TextInput
@@ -73,14 +88,14 @@ export default function OwnerTypes() {
           required
           value={form.title}
           error={fieldErrors?.title}
-          onChange={(event) => setForm({ ...form, title: event.currentTarget.value })}
+          onChange={(event) => changeField("title", event.currentTarget.value)}
         />
         <Textarea
           label="Описание"
           required
           value={form.description}
           error={fieldErrors?.description}
-          onChange={(event) => setForm({ ...form, description: event.currentTarget.value })}
+          onChange={(event) => changeField("description", event.currentTarget.value)}
         />
         <TextInput
           label="Длительность, минут"
@@ -91,7 +106,7 @@ export default function OwnerTypes() {
           step={15}
           required
           value={form.durationMinutes}
-          onChange={(event) => setForm({ ...form, durationMinutes: event.currentTarget.value })}
+          onChange={(event) => changeField("durationMinutes", event.currentTarget.value)}
         />
         {error ? (
           <p role="alert">

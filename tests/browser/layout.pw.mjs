@@ -60,6 +60,58 @@ test("landing describes the live demo and leads to booking without future-launch
   });
 });
 
+test("sticky header spans the viewport and preserves content alignment while scrolling", async ({
+  page,
+  request,
+}) => {
+  await setup(async (backend, frontend) => {
+    await createType(request, backend, 0);
+    const widths = page.viewportSize().width < 600 ? [360, 520] : [521, 800, 1702, 2560];
+    for (const width of widths) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const path of ["/", "/book", "/book/type-00", "/owner"]) {
+        await page.goto(`${frontend.url}${path}`);
+        const header = page.getByRole("banner");
+        await expect(header).toBeVisible();
+        const assertHeader = async () => {
+          const geometry = await header.evaluate((element) => {
+            const box = element.getBoundingClientRect();
+            const container = document.querySelector("main").parentElement;
+            const containerBox = container.getBoundingClientRect();
+            const style = getComputedStyle(container);
+            return {
+              left: box.left,
+              right: box.right,
+              top: box.top,
+              height: box.height,
+              viewport: document.documentElement.clientWidth,
+              logoLeft: element.querySelector(".wordmark").getBoundingClientRect().left,
+              contentLeft: containerBox.left + parseFloat(style.paddingLeft),
+              edgesCovered: [1, document.documentElement.clientWidth - 1].every((x) =>
+                element.contains(document.elementFromPoint(x, box.height / 2)),
+              ),
+              overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+            };
+          });
+          expect(Math.abs(geometry.left)).toBeLessThan(1);
+          expect(Math.abs(geometry.right - geometry.viewport)).toBeLessThan(1);
+          expect(geometry.top).toBe(0);
+          expect(geometry.height).toBeLessThanOrEqual(width <= 520 ? 104 : width <= 800 ? 64 : 72);
+          expect(Math.abs(geometry.logoLeft - geometry.contentLeft)).toBeLessThan(1);
+          expect(geometry.edgesCovered).toBe(true);
+          expect(geometry.overflow).toBe(false);
+        };
+        await assertHeader();
+        await page.evaluate(() => window.scrollTo({ top: 650, behavior: "instant" }));
+        if (path === "/") await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+        await assertHeader();
+        await expect(header.getByRole("link", { name: "Окошко — на главную" })).toBeVisible();
+        await expect(header.getByRole("navigation", { name: "Основная навигация" })).toBeVisible();
+      }
+    }
+  });
+});
+
 test("compact catalogue separates actions, styles the selector and keeps Back and header visible", async ({
   page,
   request,

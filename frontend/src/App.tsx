@@ -2,20 +2,20 @@ import { Container } from "@mantine/core";
 import "./App.css";
 import BookingFlow from "./BookingFlow";
 import Owner from "./Owner";
+import SiteHeader from "./SiteHeader";
 import QueryProvider from "./QueryProvider";
 
 const steps = [
   {
     number: "01",
-    title: "Выберите тип встречи",
-    description:
-      "У каждого типа встречи есть название, описание и длительность. Выберите тот, который подходит вашему вопросу.",
+    title: "Выберите тип и время",
+    description: "Сначала тип встречи или сначала свободное время — выбирайте в любом порядке.",
   },
   {
     number: "02",
-    title: "Выберите день и время",
+    title: "Проверьте детали",
     description:
-      "Выберите свободное время на ближайшие 14 календарных дней. Доступность зависит от длительности выбранной встречи.",
+      "Сверьте тип, дату и время. Доступность на ближайшие 14 календарных дней зависит от длительности встречи.",
   },
   {
     number: "03",
@@ -170,22 +170,22 @@ function SchedulePreview() {
 function BookingCatalogue({ path }: { path: string }) {
   return (
     <div className="landing">
-      <Container size="xl" className="page-container">
-        <header className="site-header">
-          <a className="wordmark" href="/" aria-label="Окошко — на главную">
-            <WindowMark />
-            <span>
-              окошко<span className="wordmark-dot">.</span>
-            </span>
-          </a>
-          <nav className="header-nav" aria-label="Основная навигация">
-            <a href="/owner">Управление</a>
-          </nav>
-          <span className="development-status">
-            <span />
-            Учебное демо
+      <SiteHeader>
+        <a className="wordmark" href="/" aria-label="Окошко — на главную">
+          <WindowMark />
+          <span>
+            окошко<span className="wordmark-dot">.</span>
           </span>
-        </header>
+        </a>
+        <nav className="header-nav" aria-label="Основная навигация">
+          <a href="/owner">Управление</a>
+        </nav>
+        <span className="development-status">
+          <span />
+          Учебное демо
+        </span>
+      </SiteHeader>
+      <Container size="xl" className="page-container">
         <main className="booking-catalogue" aria-label="Запись на встречу">
           <div className="hero-copy">
             <BookingFlow path={path} />
@@ -218,24 +218,23 @@ function AppRoutes({ path }: { path: string }) {
       <a className="skip-link" href="#main">
         К содержанию
       </a>
-      <Container size="xl" className="page-container">
-        <header id="top" className="site-header">
-          <a className="wordmark" href="#top" aria-label="Окошко — на главную">
-            <WindowMark />
-            <span>
-              окошко<span className="wordmark-dot">.</span>
-            </span>
-          </a>
-          <nav className="header-nav" aria-label="Основная навигация">
-            <a href="#how-it-works">Как это работает</a>
-            <a href="/owner">Управление</a>
-          </nav>
-          <span className="development-status">
-            <span />
-            Учебное демо
+      <SiteHeader id="top">
+        <a className="wordmark" href="#top" aria-label="Окошко — на главную">
+          <WindowMark />
+          <span>
+            окошко<span className="wordmark-dot">.</span>
           </span>
-        </header>
-
+        </a>
+        <nav className="header-nav" aria-label="Основная навигация">
+          <a href="#how-it-works">Как это работает</a>
+          <a href="/owner">Управление</a>
+        </nav>
+        <span className="development-status">
+          <span />
+          Учебное демо
+        </span>
+      </SiteHeader>
+      <Container size="xl" className="page-container">
         <main id="main">
           <section className="hero" aria-labelledby="hero-title">
             <div className="hero-copy">
@@ -251,8 +250,8 @@ function AppRoutes({ path }: { path: string }) {
                 для вашего звонка<span className="accent-dot">.</span>
               </h1>
               <p className="hero-description">
-                Простой сервис записи на звонок. Выберите тип встречи, найдите свободное время и
-                подтвердите запись. Без регистрации и лишней переписки.
+                Простой сервис записи на звонок. Начните с типа встречи или свободного времени — как
+                вам удобнее. Без регистрации и лишней переписки.
               </p>
               <div className="hero-actions">
                 <a className="page-link" href="/book">

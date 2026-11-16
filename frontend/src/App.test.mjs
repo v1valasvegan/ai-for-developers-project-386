@@ -15,8 +15,11 @@ test("landing explains the available guest journey and public demo limitations",
   expect(text).not.toMatch(
     /Один владелец календаря|Владелец календаря задан заранее|Один календарь/,
   );
-  expect(text).toContain("Выберите тип встречи");
-  expect(text).toContain("Выберите день и время");
+  expect(text).toContain("Начните с типа встречи или свободного времени");
+  const steps = html.match(/<ol class="steps">[\s\S]*?<\/ol>/)?.[0];
+  expect(steps).toContain("Выберите тип и время");
+  expect(steps).toContain("в любом порядке");
+  expect(steps).toContain("Проверьте детали");
   expect(text).toContain("Укажите имя и email");
   expect(text).toContain("подтвердите запись");
   expect(text).toContain("Без регистрации");

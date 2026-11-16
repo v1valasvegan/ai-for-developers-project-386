@@ -4,6 +4,7 @@ import { Container } from "@mantine/core";
 import { useDocumentVisibility } from "@mantine/hooks";
 import OwnerTypes from "./OwnerTypes";
 import ScrollRegion from "./ScrollRegion";
+import SiteHeader from "./SiteHeader";
 import { bookingsQuery } from "./queries";
 
 export default function Owner() {
@@ -35,18 +36,18 @@ export default function Owner() {
 
   return (
     <div className="landing">
-      <Container size="xl" className="page-container">
-        <header className="site-header">
-          <a className="wordmark" href="/" aria-label="Окошко — на главную">
-            окошко.
+      <SiteHeader>
+        <a className="wordmark" href="/" aria-label="Окошко — на главную">
+          окошко.
+        </a>
+        <nav className="header-nav" aria-label="Основная навигация">
+          <a href="/book">Записаться</a>
+          <a href="/owner" aria-current="page">
+            Управление
           </a>
-          <nav className="header-nav" aria-label="Основная навигация">
-            <a href="/book">Записаться</a>
-            <a href="/owner" aria-current="page">
-              Управление
-            </a>
-          </nav>
-        </header>
+        </nav>
+      </SiteHeader>
+      <Container size="xl" className="page-container">
         <main className="owner-page">
           <h1>Управление</h1>
           <div role="tablist" aria-label="Управление">

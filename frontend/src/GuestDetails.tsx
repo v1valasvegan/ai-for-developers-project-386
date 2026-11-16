@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "./queries";
+import { dismissFieldError } from "./formErrors";
 import { createBooking } from "./api/generated/sdk.gen";
 import type { ApiError, Booking, CreateBooking } from "./api/generated/types.gen";
 
@@ -29,6 +30,11 @@ export default function GuestDetails({
   const queryClient = useQueryClient();
   const pending = attempt?.status === "pending";
   const [error, setError] = useState<ApiError | null>(null);
+  function changeField(field: keyof Guest, value: string) {
+    setGuest({ ...guest, [field]: value });
+    setError((current) => dismissFieldError(current, field) ?? null);
+  }
+
   async function submit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending) return;
@@ -109,7 +115,7 @@ export default function GuestDetails({
           value={guest.name}
           aria-invalid={Boolean(error?.fieldErrors?.name)}
           aria-describedby={error?.fieldErrors?.name ? "booking-name-error" : undefined}
-          onChange={(event) => setGuest({ ...guest, name: event.target.value })}
+          onChange={(event) => changeField("name", event.target.value)}
         />
       </label>
       {error?.fieldErrors?.name ? <p id="booking-name-error">{error.fieldErrors.name}</p> : null}
@@ -124,7 +130,7 @@ export default function GuestDetails({
           value={guest.email}
           aria-invalid={Boolean(error?.fieldErrors?.email)}
           aria-describedby={error?.fieldErrors?.email ? "booking-email-error" : undefined}
-          onChange={(event) => setGuest({ ...guest, email: event.target.value })}
+          onChange={(event) => changeField("email", event.target.value)}
         />
       </label>
       {error?.fieldErrors?.email ? <p id="booking-email-error">{error.fieldErrors.email}</p> : null}

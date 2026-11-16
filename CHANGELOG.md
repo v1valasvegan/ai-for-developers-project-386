@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.3.0](https://github.com/v1valasvegan/ai-for-developers-project-386/compare/v0.2.0...v0.3.0) (2026-11-16)
+
+
+### Features
+
+* упаковать и развернуть Окошко ([#29](https://github.com/v1valasvegan/ai-for-developers-project-386/issues/29)) ([c0503b8](https://github.com/v1valasvegan/ai-for-developers-project-386/commit/c0503b829b4137cc5bc47d2520cc29e42d4560b4))
+* упаковать приложение в Docker ([#27](https://github.com/v1valasvegan/ai-for-developers-project-386/issues/27)) ([4fa6ac8](https://github.com/v1valasvegan/ai-for-developers-project-386/commit/4fa6ac8ef1157970d16c9744baad3b6f9bc17557))
+
+
+### Bug Fixes
+
+* актуализировать демо и инструкции агента ([#31](https://github.com/v1valasvegan/ai-for-developers-project-386/issues/31)) ([a41a884](https://github.com/v1valasvegan/ai-for-developers-project-386/commit/a41a8841d830a8b8b25f79268b40a1327e290b7f))
+* актуализировать тексты работающего демо ([#31](https://github.com/v1valasvegan/ai-for-developers-project-386/issues/31)) ([883ba56](https://github.com/v1valasvegan/ai-for-developers-project-386/commit/883ba56b5139f6b99eb9dcaf8b4c2c67273c2b99))
+* обновить ammonia после нового advisory ([#27](https://github.com/v1valasvegan/ai-for-developers-project-386/issues/27)) ([77a78d8](https://github.com/v1valasvegan/ai-for-developers-project-386/commit/77a78d89938f9ccac4f92b318d760e2e23a1873c))
+* сохранить generated-код при загрузке в Railway ([#28](https://github.com/v1valasvegan/ai-for-developers-project-386/issues/28)) ([47f1c00](https://github.com/v1valasvegan/ai-for-developers-project-386/commit/47f1c006399bc189903516c30ae95074391aae93))
+* улучшить шапку и обработку ошибок форм ([#38](https://github.com/v1valasvegan/ai-for-developers-project-386/issues/38)) ([ca63f13](https://github.com/v1valasvegan/ai-for-developers-project-386/commit/ca63f1350bd28e2c0c72603541a0559c9dd7bc39))
+* улучшить шапку и обработку ошибок форм ([#38](https://github.com/v1valasvegan/ai-for-developers-project-386/issues/38)) ([c0f3352](https://github.com/v1valasvegan/ai-for-developers-project-386/commit/c0f33520c8fef94d78611787723eb3fe78ddc1ac))
+
 ## [0.2.0](https://github.com/v1valasvegan/ai-for-developers-project-386/compare/v0.1.0...v0.2.0) (2026-11-13)
 
 ### Features
